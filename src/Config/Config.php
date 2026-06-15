@@ -26,6 +26,7 @@ final readonly class Config
         public string $controlDatabaseUser,
         public string $controlDatabasePassword,
         public string $secretProvider = self::SECRET_PROVIDER_ENV,
+        public string $encryptionKey = '',
         public string $cacheProvider = self::CACHE_PROVIDER_ARRAY,
         public array $trustedDomainSuffixes = [],
         public bool $allowLocalhost = false,
@@ -60,6 +61,10 @@ final readonly class Config
             throw new ConfigurationException('Cache TTL cannot be negative.');
         }
 
+        if ($this->customCache === null) {
+            $this->validateEncryptionKey($this->encryptionKey);
+        }
+
         if (
             $this->customSecretProvider === null
             && !in_array(
@@ -77,5 +82,16 @@ final readonly class Config
         ) {
             throw new ConfigurationException('Cache provider is not supported.');
         }
+    }
+
+    private function validateEncryptionKey(string $base64Key): void
+    {
+        $key = base64_decode($base64Key, true);
+
+        if ($key === false || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
+            throw new ConfigurationException('Encryption key is invalid.');
+        }
+
+        sodium_memzero($key);
     }
 }

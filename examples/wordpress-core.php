@@ -16,6 +16,7 @@ $config = new Config(
     controlDatabaseName: getenv('CONTROL_DB_NAME') ?: 'wordpress_control',
     controlDatabaseUser: getenv('CONTROL_DB_USER') ?: 'wordpress_control',
     controlDatabasePassword: getenv('CONTROL_DB_PASSWORD') ?: '',
+    encryptionKey: getenv('TENANT_ENCRYPTION_KEY') ?: '',
     secretProvider: getenv('TENANT_SECRET_PROVIDER') ?: Config::SECRET_PROVIDER_ENV,
     trustedDomainSuffixes: ['*.example.com'],
 );

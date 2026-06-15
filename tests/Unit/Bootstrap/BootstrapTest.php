@@ -10,6 +10,7 @@ use MrKindy\MultiTenantWordPress\Config\Config;
 use MrKindy\MultiTenantWordPress\Contracts\SecretProviderInterface;
 use MrKindy\MultiTenantWordPress\Contracts\TenantRepositoryInterface;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
 use MrKindy\MultiTenantWordPress\Exceptions\InvalidDomainException;
 use MrKindy\MultiTenantWordPress\Tests\Support\CreatesTenant;
@@ -49,10 +50,13 @@ final class BootstrapTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'control_reader',
             controlDatabasePassword: 'control-secret',
+            encryptionKey: EncryptionService::generateKey(),
             trustedDomainSuffixes: ['*.example.com'],
             tenantRepository: $repository,
             customSecretProvider: $secrets,
-            customCache: new ArrayCache(),
+            customCache: new ArrayCache(
+                new EncryptionService(EncryptionService::generateKey()),
+            ),
         );
 
         self::assertSame($tenant, Bootstrap::boot($config));
@@ -74,6 +78,7 @@ final class BootstrapTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'control_reader',
             controlDatabasePassword: 'control-secret',
+            encryptionKey: EncryptionService::generateKey(),
             tenantRepository: $repository,
             customSecretProvider: $this->createStub(SecretProviderInterface::class),
         ));
@@ -94,6 +99,7 @@ final class BootstrapTest extends TestCase
                 controlDatabaseName: 'wordpress_control',
                 controlDatabaseUser: 'control_reader',
                 controlDatabasePassword: 'control-secret',
+                encryptionKey: EncryptionService::generateKey(),
                 tenantRepository: $repository,
                 customSecretProvider: $this->createStub(SecretProviderInterface::class),
             ));

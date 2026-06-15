@@ -12,14 +12,13 @@ final class EncryptionServiceTest extends TestCase
 {
     public function testItEncryptsAndDecryptsASecret(): void
     {
-        $service = new EncryptionService();
-        $key = $service->generateKey();
-        $ciphertext = $service->encrypt('correct horse battery staple', $key);
+        $service = new EncryptionService(EncryptionService::generateKey());
+        $ciphertext = $service->encrypt('correct horse battery staple');
 
         self::assertNotSame('correct horse battery staple', $ciphertext);
         self::assertSame(
             'correct horse battery staple',
-            $service->decrypt($ciphertext, $key),
+            $service->decrypt($ciphertext),
         );
     }
 
@@ -27,28 +26,27 @@ final class EncryptionServiceTest extends TestCase
     {
         $this->expectException(ConfigurationException::class);
 
-        (new EncryptionService())->encrypt('secret', 'not-a-valid-key');
+        new EncryptionService('not-a-valid-key');
     }
 
     public function testItRejectsTamperedCiphertext(): void
     {
-        $service = new EncryptionService();
-        $key = $service->generateKey();
-        $payload = base64_decode($service->encrypt('secret', $key), true);
+        $service = new EncryptionService(EncryptionService::generateKey());
+        $payload = base64_decode($service->encrypt('secret'), true);
         self::assertIsString($payload);
         $payload[30] = chr(ord($payload[30]) ^ 1);
 
         $this->expectException(ConfigurationException::class);
 
-        $service->decrypt(base64_encode($payload), $key);
+        $service->decrypt(base64_encode($payload));
     }
 
     public function testItRejectsMalformedCiphertext(): void
     {
-        $service = new EncryptionService();
+        $service = new EncryptionService(EncryptionService::generateKey());
 
         $this->expectException(ConfigurationException::class);
 
-        $service->decrypt('not-base64', $service->generateKey());
+        $service->decrypt('not-base64');
     }
 }
