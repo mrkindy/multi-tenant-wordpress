@@ -9,14 +9,20 @@ use SodiumException;
 
 final class EncryptionService
 {
-    public function generateKey(): string
+    public function __construct(private readonly string $base64Key)
+    {
+        $key = $this->decodeKey($this->base64Key);
+        sodium_memzero($key);
+    }
+
+    public static function generateKey(): string
     {
         return base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES));
     }
 
-    public function encrypt(string $plaintext, string $base64Key): string
+    public function encrypt(string $plaintext): string
     {
-        $key = $this->decodeKey($base64Key);
+        $key = $this->decodeKey($this->base64Key);
         $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
 
         try {
@@ -30,9 +36,9 @@ final class EncryptionService
         return base64_encode($nonce . $ciphertext);
     }
 
-    public function decrypt(string $encodedCiphertext, string $base64Key): string
+    public function decrypt(string $encodedCiphertext): string
     {
-        $key = $this->decodeKey($base64Key);
+        $key = $this->decodeKey($this->base64Key);
         $payload = base64_decode($encodedCiphertext, true);
 
         if (

@@ -12,6 +12,7 @@ use MrKindy\MultiTenantWordPress\Contracts\SecretProviderInterface;
 use MrKindy\MultiTenantWordPress\Contracts\TenantRepositoryInterface;
 use MrKindy\MultiTenantWordPress\Domain\DomainValidator;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
 use MrKindy\MultiTenantWordPress\Exceptions\InvalidDomainException;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantNotFoundException;
@@ -96,7 +97,9 @@ final class Bootstrap
 
     private static function cache(Config $config): CacheInterface
     {
-        return $config->customCache ?? new ArrayCache();
+        return $config->customCache ?? new ArrayCache(
+            new EncryptionService($config->encryptionKey),
+        );
     }
 
     private static function secretProvider(Config $config): SecretProviderInterface

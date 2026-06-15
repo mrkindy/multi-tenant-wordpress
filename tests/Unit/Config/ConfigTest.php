@@ -7,6 +7,7 @@ namespace MrKindy\MultiTenantWordPress\Tests\Unit\Config;
 use MrKindy\MultiTenantWordPress\Config\Config;
 use MrKindy\MultiTenantWordPress\Contracts\CacheInterface;
 use MrKindy\MultiTenantWordPress\Contracts\SecretProviderInterface;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
 use PHPUnit\Framework\TestCase;
 
@@ -22,6 +23,7 @@ final class ConfigTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'reader',
             controlDatabasePassword: 'secret',
+            encryptionKey: EncryptionService::generateKey(),
         );
     }
 
@@ -35,6 +37,7 @@ final class ConfigTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'reader',
             controlDatabasePassword: 'secret',
+            encryptionKey: EncryptionService::generateKey(),
             secretProvider: 'unknown',
         );
     }
@@ -47,6 +50,7 @@ final class ConfigTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'reader',
             controlDatabasePassword: 'secret',
+            encryptionKey: '',
             secretProvider: 'vault',
             cacheProvider: 'redis',
             customSecretProvider: $this->createStub(SecretProviderInterface::class),
@@ -67,6 +71,7 @@ final class ConfigTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'reader',
             controlDatabasePassword: 'secret',
+            encryptionKey: EncryptionService::generateKey(),
         );
     }
 
@@ -80,7 +85,22 @@ final class ConfigTest extends TestCase
             controlDatabaseName: 'wordpress_control',
             controlDatabaseUser: 'reader',
             controlDatabasePassword: 'secret',
+            encryptionKey: EncryptionService::generateKey(),
             cacheTtlSeconds: -1,
+        );
+    }
+
+    public function testItRejectsInvalidEncryptionKeyForDefaultCache(): void
+    {
+        $this->expectException(ConfigurationException::class);
+
+        new Config(
+            controlDatabaseHost: 'control-db',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'wordpress_control',
+            controlDatabaseUser: 'reader',
+            controlDatabasePassword: 'secret',
+            encryptionKey: 'invalid',
         );
     }
 }

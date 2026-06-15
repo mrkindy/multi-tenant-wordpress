@@ -44,6 +44,7 @@ Bootstrap::boot(new Config(
     controlDatabaseName: getenv('CONTROL_DB_NAME') ?: 'wordpress_control',
     controlDatabaseUser: getenv('CONTROL_DB_USER') ?: 'wordpress_control',
     controlDatabasePassword: getenv('CONTROL_DB_PASSWORD') ?: '',
+    encryptionKey: getenv('TENANT_ENCRYPTION_KEY') ?: '',
     secretProvider: Config::SECRET_PROVIDER_ENV,
     cacheProvider: Config::CACHE_PROVIDER_ARRAY,
     trustedDomainSuffixes: ['*.example.com', '*.mrkindy.com'],
@@ -60,8 +61,9 @@ hostname. Production deployments should always provide an allowlist.
 Custom implementations can be injected with `tenantRepository`,
 `customSecretProvider`, and `customCache`. The bundled array cache is
 request-local under traditional PHP and process-local under long-running
-servers. Use a bounded external Redis or Memcached implementation in a
-multi-node deployment.
+servers. It encrypts cached tenant payloads with `encryptionKey`, which must be
+a base64-encoded 32-byte Sodium key. Use a bounded external Redis or Memcached
+implementation in a multi-node deployment.
 
 ## Control Database Schema
 
@@ -131,6 +133,7 @@ services:
       CONTROL_DB_NAME: wordpress_control
       CONTROL_DB_USER: wordpress_control_reader
       CONTROL_DB_PASSWORD_FILE: /run/secrets/control_db_password
+      TENANT_ENCRYPTION_KEY_FILE: /run/secrets/tenant_encryption_key
       TENANT_SECRET_PROVIDER: aws
       TRUSTED_DOMAIN_SUFFIXES: "*.example.com"
       AWS_REGION: us-east-1
@@ -149,6 +152,7 @@ EKS are preferred over static access keys.
 ```php
 $config = new Config(
     // Control database settings...
+    encryptionKey: getenv('TENANT_ENCRYPTION_KEY') ?: '',
     secretProvider: Config::SECRET_PROVIDER_AWS,
     awsRegion: 'eu-central-1',
     awsSecretPasswordKey: 'password',
@@ -168,16 +172,21 @@ configure WordPress.
 ## Local Encryption
 
 `EncryptionService` provides authenticated Sodium Secretbox encryption for
-control-plane tooling:
+control-plane tooling. Create it once with the configured key, then reuse that
+instance for every encryption and decryption operation:
 
 ```php
-$encryption = new EncryptionService();
-$key = $encryption->generateKey();
-$ciphertext = $encryption->encrypt('secret', $key);
-$plaintext = $encryption->decrypt($ciphertext, $key);
+$key = EncryptionService::generateKey();
+$encryption = new EncryptionService($key);
+
+$ciphertext = $encryption->encrypt('secret');
+$plaintext = $encryption->decrypt($ciphertext);
 ```
 
-Keys are base64 encoded and must be stored outside the control database.
+Keys are base64 encoded and must be stored outside the control database. In
+production, generate the key once and pass it through `Config::$encryptionKey`
+from an environment variable or secret manager; do not generate a new key per
+request.
 Secret-provider references remain the recommended runtime model.
 
 ## Security Model

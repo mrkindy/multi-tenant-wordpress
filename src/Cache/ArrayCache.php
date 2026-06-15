@@ -6,13 +6,19 @@ namespace MrKindy\MultiTenantWordPress\Cache;
 
 use MrKindy\MultiTenantWordPress\Contracts\CacheInterface;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 
 final class ArrayCache implements CacheInterface
 {
     /**
-     * @var array<string, array{tenant: Tenant, expiresAt: int|null}>
+     * @var array<string, array{tenant: string, expiresAt: int|null}>
      */
     private array $items = [];
+
+    public function __construct(
+        private readonly EncryptionService $encryptionService,
+    ) {
+    }
 
     public function get(string $key): ?Tenant
     {
@@ -28,13 +34,24 @@ final class ArrayCache implements CacheInterface
             return null;
         }
 
-        return $item['tenant'];
+        try {
+            $decrypted = $this->encryptionService->decrypt($item['tenant']);
+            $tenant = unserialize($decrypted, ['allowed_classes' => [Tenant::class]]);
+
+            return $tenant instanceof Tenant ? $tenant : null;
+        } catch (\Throwable) {
+            //(Cache miss)
+            return null;
+        }
     }
 
     public function set(string $key, Tenant $tenant, int $ttlSeconds): void
     {
+        $serialized = serialize($tenant);
+        $encrypted = $this->encryptionService->encrypt($serialized);
+
         $this->items[$key] = [
-            'tenant' => $tenant,
+            'tenant' => $encrypted,
             'expiresAt' => $ttlSeconds === 0 ? null : time() + $ttlSeconds,
         ];
     }

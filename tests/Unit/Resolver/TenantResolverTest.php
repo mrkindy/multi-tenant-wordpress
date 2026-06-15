@@ -6,6 +6,7 @@ namespace MrKindy\MultiTenantWordPress\Tests\Unit\Resolver;
 
 use MrKindy\MultiTenantWordPress\Cache\ArrayCache;
 use MrKindy\MultiTenantWordPress\Contracts\TenantRepositoryInterface;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantNotFoundException;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantSuspendedException;
 use MrKindy\MultiTenantWordPress\Resolver\TenantResolver;
@@ -25,7 +26,7 @@ final class TenantResolverTest extends TestCase
             ->method('findByDomain')
             ->with('shop.example.com')
             ->willReturn($tenant);
-        $resolver = new TenantResolver($repository, new ArrayCache(), 60);
+        $resolver = new TenantResolver($repository, $this->createCache(), 60);
 
         self::assertSame($tenant, $resolver->resolve('shop.example.com'));
         self::assertSame($tenant, $resolver->resolve('shop.example.com'));
@@ -38,7 +39,7 @@ final class TenantResolverTest extends TestCase
 
         $this->expectException(TenantNotFoundException::class);
 
-        (new TenantResolver($repository, new ArrayCache()))
+        (new TenantResolver($repository, $this->createCache()))
             ->resolve('missing.example.com');
     }
 
@@ -51,7 +52,14 @@ final class TenantResolverTest extends TestCase
 
         $this->expectException(TenantSuspendedException::class);
 
-        (new TenantResolver($repository, new ArrayCache()))
+        (new TenantResolver($repository, $this->createCache()))
             ->resolve('shop.example.com');
+    }
+
+    private function createCache(): ArrayCache
+    {
+        return new ArrayCache(
+            new EncryptionService(EncryptionService::generateKey()),
+        );
     }
 }

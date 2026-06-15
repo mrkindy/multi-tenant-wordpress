@@ -15,6 +15,7 @@ Bootstrap::boot(new Config(
     controlDatabaseName: env('CONTROL_DB_NAME'),
     controlDatabaseUser: env('CONTROL_DB_USER'),
     controlDatabasePassword: env('CONTROL_DB_PASSWORD'),
+    encryptionKey: env('TENANT_ENCRYPTION_KEY'),
     secretProvider: env('TENANT_SECRET_PROVIDER', Config::SECRET_PROVIDER_ENV),
     trustedDomainSuffixes: ['*.example.com'],
     awsRegion: env('AWS_REGION', 'us-east-1'),
