@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<ruleset name="Multi Tenant WordPress">
+    <description>PSR-12 rules for the multi-tenant WordPress package.</description>
+    <file>src</file>
+    <file>tests</file>
+    <file>examples</file>
+    <file>config/example.php</file>
+    <arg name="colors"/>
+    <arg value="sp"/>
+    <rule ref="PSR12">
+        <!-- PHP_CodeSniffer 3.x misclassifies readonly declarations as side effects. -->
+        <exclude name="PSR1.Files.SideEffects.FoundWithSymbols"/>
+    </rule>
+</ruleset>

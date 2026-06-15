@@ -1,6 +1,10 @@
 MIT License
 
+<<<<<<< HEAD
 Copyright (c) 2026 Ibrahim Abotaleb
+=======
+Copyright (c) 2026 MrKindy
+>>>>>>> 70528cd (Create package metadata, contracts, immutable configuration/DTOs, exceptions, and domain validation.)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

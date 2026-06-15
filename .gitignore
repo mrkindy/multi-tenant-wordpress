@@ -1,0 +1,7 @@
+/vendor/
+/.phpunit.cache/
+/.phpstan-cache/
+/coverage/
+/composer.lock
+/.agents/
+skills-lock.json
