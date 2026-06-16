@@ -9,6 +9,14 @@ The package does not require WordPress Multisite, Bedrock, Laravel, or another
 framework. It supports PHP 8.3+, WordPress Core, Bedrock, Docker, FrankenPHP,
 Nginx, and Apache.
 
+## Why not WordPress Multisite?
+
+While WordPress Multisite is a built-in feature, it often falls short for SaaS platforms due to its shared database architecture. This package offers several advantages over Multisite:
+- **Strict Data Isolation**: Each tenant has its own dedicated database, preventing data leakage and making per-tenant backups or migrations trivial.
+- **Enhanced Security**: Every tenant can use unique database credentials. In Multisite, a single compromised database credential grants access to the entire network.
+- **Infrastructure Scalability**: Databases can be spread across different database servers or clusters easily. Multisite typically requires complex sharding plugins to achieve this.
+- **Plugin Compatibility**: Many WordPress plugins are not "Multisite-aware" and behave unexpectedly in a shared environment. By keeping each site as a standalone instance, you ensure maximum compatibility.
+
 ## Installation
 
 ```bash
