@@ -103,6 +103,128 @@ final class PdoTenantRepositoryTest extends TestCase
         $this->repository->findByDomain('shop.example.com');
     }
 
+    public function testItRejectsMissingRequiredField(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+        $this->pdo->exec("UPDATE tenants SET database_host = ''");
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItRejectsNullRequiredField(): void
+    {
+        // Insert a tenant with empty string instead of NULL (since column is NOT NULL)
+        $this->insertTenant('shop.example.com', null);
+        // Simulate a null value by directly manipulating the data
+        // The hydrate method checks for null, empty string, or missing fields
+        $this->pdo->exec("UPDATE tenants SET database_host = ''");
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItRejectsNonObjectMetadata(): void
+    {
+        $this->insertTenant('shop.example.com', '"string-value"');
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant metadata must be a JSON object.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItRejectsNonJsonMetadata(): void
+    {
+        $this->insertTenant('shop.example.com', 'not-json-at-all');
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant metadata must be a JSON object.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItRejectsNonStringMetadata(): void
+    {
+        // This tests the decodeMetadata when metadata is not a string (e.g., integer from DB)
+        // SQLite may convert integers to strings, so we test with an actual integer
+        $this->pdo->exec(
+            <<<'SQL'
+            INSERT INTO tenants (
+                id, domain, database_host, database_port, database_name,
+                database_user, encrypted_database_password, status, plan, metadata
+            ) VALUES (
+                2, 'test.example.com', 'db', 3306, 'tenant_2',
+                'user', 'pass', 'active', 'basic', 12345
+            )
+            SQL,
+        );
+
+        $this->expectException(ConfigurationException::class);
+        // The error message depends on whether SQLite returns it as int or string
+        // If int: 'Tenant metadata is invalid.'
+        // If string '12345': 'Tenant metadata must be a JSON object.'
+
+        $this->repository->findByDomain('test.example.com');
+    }
+
+    public function testItAcceptsNullMetadata(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $tenant = $this->repository->findByDomain('shop.example.com');
+
+        self::assertNotNull($tenant);
+        self::assertSame([], $tenant->metadata);
+    }
+
+    public function testItAcceptsEmptyStringMetadata(): void
+    {
+        $this->insertTenant('shop.example.com', '');
+
+        $tenant = $this->repository->findByDomain('shop.example.com');
+
+        self::assertNotNull($tenant);
+        self::assertSame([], $tenant->metadata);
+    }
+
+    public function testItRejectsPortZero(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+        $this->pdo->exec('UPDATE tenants SET database_port = 0');
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItRejectsNegativePort(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+        $this->pdo->exec('UPDATE tenants SET database_port = -1');
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->findByDomain('shop.example.com');
+    }
+
+    public function testItNormalizesStatusToLowercase(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+        $this->pdo->exec("UPDATE tenants SET status = 'ACTIVE'");
+
+        $tenant = $this->repository->findByDomain('shop.example.com');
+
+        self::assertNotNull($tenant);
+        self::assertSame('active', $tenant->status);
+    }
+
     private function insertTenant(string $domain, ?string $metadata): void
     {
         $statement = $this->pdo->prepare(

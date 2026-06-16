@@ -35,7 +35,7 @@ final class AwsSecretsProviderTest extends TestCase
 
     public function testItExtractsPasswordFromJsonSecret(): void
     {
-        $client = $this->createStub(AwsSecretsManagerClientInterface::class);
+        $client = self::createStub(AwsSecretsManagerClientInterface::class);
         $client
             ->method('getSecretString')
             ->willReturn('{"database_password":"secret"}');
@@ -49,7 +49,7 @@ final class AwsSecretsProviderTest extends TestCase
 
     public function testItRejectsMissingSecretString(): void
     {
-        $client = $this->createStub(AwsSecretsManagerClientInterface::class);
+        $client = self::createStub(AwsSecretsManagerClientInterface::class);
         $client->method('getSecretString')->willReturn(null);
 
         $this->expectException(ConfigurationException::class);
@@ -60,7 +60,7 @@ final class AwsSecretsProviderTest extends TestCase
 
     public function testItRejectsMissingJsonPasswordKey(): void
     {
-        $client = $this->createStub(AwsSecretsManagerClientInterface::class);
+        $client = self::createStub(AwsSecretsManagerClientInterface::class);
         $client
             ->method('getSecretString')
             ->willReturn('{"username":"tenant"}');
