@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Tests\Unit\Repository;
 
+use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
+use MrKindy\MultiTenantWordPress\DTO\UpdateTenant;
 use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 use PDO;
@@ -49,6 +51,198 @@ final class PdoTenantRepositoryTest extends TestCase
         self::assertSame('tenant_1', $tenant->databaseName);
         self::assertSame(3306, $tenant->databasePort);
         self::assertSame(['region' => 'eu-central-1'], $tenant->metadata);
+    }
+
+    public function testItCreatesTenantUsingPreparedStatement(): void
+    {
+        $tenant = $this->repository->create(new CreateTenant(
+            domain: 'created.example.com',
+            databaseHost: 'tenant-created-db',
+            databasePort: 3307,
+            databaseName: 'tenant_created',
+            databaseUser: 'tenant_created_user',
+            encryptedDatabasePassword: 'TENANT_CREATED_DATABASE_PASSWORD',
+            status: 'ACTIVE',
+            plan: 'enterprise',
+            metadata: ['uploads_path' => '/srv/uploads/created'],
+        ));
+
+        self::assertSame('1', $tenant->id);
+        self::assertSame('created.example.com', $tenant->domain);
+        self::assertSame('active', $tenant->status);
+        self::assertSame(['uploads_path' => '/srv/uploads/created'], $tenant->metadata);
+
+        $loaded = $this->repository->findByDomain('created.example.com');
+
+        self::assertNotNull($loaded);
+        self::assertSame($tenant->id, $loaded->id);
+        self::assertSame('tenant_created', $loaded->databaseName);
+        self::assertSame(['uploads_path' => '/srv/uploads/created'], $loaded->metadata);
+    }
+
+    public function testItStoresEmptyCreateMetadataAsObject(): void
+    {
+        $this->repository->create(new CreateTenant(
+            domain: 'empty-metadata.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_empty_metadata',
+            databaseUser: 'tenant_empty_metadata_user',
+            encryptedDatabasePassword: 'TENANT_EMPTY_METADATA_DATABASE_PASSWORD',
+        ));
+
+        $statement = $this->pdo->query(
+            "SELECT metadata FROM tenants WHERE domain = 'empty-metadata.example.com'",
+        );
+        self::assertInstanceOf(PDOStatement::class, $statement);
+
+        $metadata = $statement->fetchColumn();
+
+        self::assertSame('{}', $metadata);
+    }
+
+    public function testItRejectsCreateMetadataLists(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant metadata must be a JSON object.');
+
+        $metadata = ['one', 'two'];
+
+        $this->repository->create(new CreateTenant(
+            domain: 'list-metadata.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_list_metadata',
+            databaseUser: 'tenant_list_metadata_user',
+            encryptedDatabasePassword: 'TENANT_LIST_METADATA_DATABASE_PASSWORD',
+            metadata: $metadata,
+        ));
+    }
+
+    public function testItRejectsCreatePortZero(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'bad-port.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 0,
+            databaseName: 'tenant_bad_port',
+            databaseUser: 'tenant_bad_port_user',
+            encryptedDatabasePassword: 'TENANT_BAD_PORT_DATABASE_PASSWORD',
+        ));
+    }
+
+    public function testItUpdatesTenantUsingPreparedStatement(): void
+    {
+        $this->insertTenant('shop.example.com', '{"region":"eu-central-1"}');
+
+        $tenant = $this->repository->update(new UpdateTenant(
+            id: '1',
+            domain: 'updated.example.com',
+            databaseHost: 'tenant-updated-db',
+            databasePort: 3307,
+            databaseName: 'tenant_updated',
+            databaseUser: 'tenant_updated_user',
+            encryptedDatabasePassword: 'TENANT_UPDATED_DATABASE_PASSWORD',
+            status: 'SUSPENDED',
+            plan: 'enterprise',
+            metadata: ['region' => 'us-east-1'],
+        ));
+
+        self::assertNotNull($tenant);
+        self::assertSame('1', $tenant->id);
+        self::assertSame('updated.example.com', $tenant->domain);
+        self::assertSame('tenant-updated-db', $tenant->databaseHost);
+        self::assertSame(3307, $tenant->databasePort);
+        self::assertSame('tenant_updated', $tenant->databaseName);
+        self::assertSame('tenant_updated_user', $tenant->databaseUser);
+        self::assertSame('TENANT_UPDATED_DATABASE_PASSWORD', $tenant->encryptedDatabasePassword);
+        self::assertSame('suspended', $tenant->status);
+        self::assertSame('enterprise', $tenant->plan);
+        self::assertSame(['region' => 'us-east-1'], $tenant->metadata);
+        self::assertNull($this->repository->findByDomain('shop.example.com'));
+        self::assertEquals($tenant, $this->repository->findByDomain('updated.example.com'));
+    }
+
+    public function testItReturnsNullWhenUpdatingMissingTenant(): void
+    {
+        $tenant = $this->repository->update(new UpdateTenant(
+            id: '404',
+            domain: 'missing.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_missing',
+            databaseUser: 'tenant_missing_user',
+            encryptedDatabasePassword: 'TENANT_MISSING_DATABASE_PASSWORD',
+            status: 'active',
+            plan: 'basic',
+        ));
+
+        self::assertNull($tenant);
+    }
+
+    public function testItRejectsUpdateMetadataLists(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant metadata must be a JSON object.');
+
+        $metadata = ['one', 'two'];
+
+        $this->repository->update(new UpdateTenant(
+            id: '1',
+            domain: 'shop.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_1',
+            databaseUser: 'tenant_1_user',
+            encryptedDatabasePassword: 'TENANT_1_DATABASE_PASSWORD',
+            status: 'active',
+            plan: 'business',
+            metadata: $metadata,
+        ));
+    }
+
+    public function testItRejectsUpdateWithEmptyId(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->update(new UpdateTenant(
+            id: '',
+            domain: 'shop.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_1',
+            databaseUser: 'tenant_1_user',
+            encryptedDatabasePassword: 'TENANT_1_DATABASE_PASSWORD',
+            status: 'active',
+            plan: 'business',
+        ));
+    }
+
+    public function testItDeletesTenantById(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        self::assertTrue($this->repository->delete('1'));
+        self::assertNull($this->repository->findByDomain('shop.example.com'));
+    }
+
+    public function testItReturnsFalseWhenDeletingMissingTenant(): void
+    {
+        self::assertFalse($this->repository->delete('404'));
+    }
+
+    public function testItRejectsDeleteWithEmptyId(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->delete('');
     }
 
     public function testItReturnsNullForUnknownDomain(): void

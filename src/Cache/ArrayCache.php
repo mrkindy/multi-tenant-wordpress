@@ -36,11 +36,10 @@ final class ArrayCache implements CacheInterface
 
         try {
             $decrypted = $this->encryptionService->decrypt($item['tenant']);
-            $tenant = unserialize($decrypted, ['allowed_classes' => [Tenant::class]]);
+            $tenant = @unserialize($decrypted, ['allowed_classes' => [Tenant::class]]);
 
             return $tenant instanceof Tenant ? $tenant : null;
         } catch (\Throwable) {
-            //(Cache miss)
             return null;
         }
     }

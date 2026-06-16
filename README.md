@@ -24,8 +24,10 @@ composer require mrkindy/multi-tenant-wordpress
 ```
 
 Required PHP extensions are PDO, JSON, and Sodium. The control database and
-tenant databases require separate credentials. The control database account
-should have read-only access to the `tenants` table.
+tenant databases require separate credentials. The WordPress runtime control
+database account should have read-only access to the `tenants` table. Tenant
+provisioning jobs that call `PdoTenantRepository::create()`,`PdoTenantRepository::update()`, and `PdoTenantRepository::delete()` will need a separate
+writer account with `INSERT`, `UPDATE`, and `DELETE` access.
 
 ## Request Lifecycle
 
@@ -88,7 +90,50 @@ plaintext password:
 Normalize domains to lowercase without ports or trailing dots before insert.
 Each tenant database user should have access only to its own database.
 
-Example record:
+Tenant records can be provisioned through `PdoTenantRepository::create()`,
+`update()`, and `delete()`:
+
+```php
+use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
+use MrKindy\MultiTenantWordPress\DTO\UpdateTenant;
+use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
+
+$repository = new PdoTenantRepository($writerPdo);
+
+$tenant = $repository->create(new CreateTenant(
+    domain: 'shop.example.com',
+    databaseHost: 'tenant-db-42.internal',
+    databasePort: 3306,
+    databaseName: 'tenant_42',
+    databaseUser: 'tenant_42_user',
+    encryptedDatabasePassword: 'TENANT_42_DATABASE_PASSWORD',
+    status: 'active',
+    plan: 'business',
+    metadata: ['uploads_path' => '/srv/uploads/tenant-42'],
+));
+
+$tenant = $repository->update(new UpdateTenant(
+    id: $tenant->id,
+    domain: 'shop.example.com',
+    databaseHost: 'tenant-db-42.internal',
+    databasePort: 3306,
+    databaseName: 'tenant_42',
+    databaseUser: 'tenant_42_user',
+    encryptedDatabasePassword: 'TENANT_42_DATABASE_PASSWORD',
+    status: 'suspended',
+    plan: 'business',
+    metadata: ['uploads_path' => '/srv/uploads/tenant-42'],
+));
+
+$deleted = $repository->delete('42');
+```
+
+See [examples/create-tenant.php](examples/create-tenant.php),
+[examples/update-tenant.php](examples/update-tenant.php), and
+[examples/delete-tenant.php](examples/delete-tenant.php) for standalone
+provisioning examples. Custom provisioning repositories can implement
+`TenantProvisioningRepositoryInterface` without changing runtime tenant lookup.
+The equivalent SQL record is:
 
 ```sql
 INSERT INTO tenants (
