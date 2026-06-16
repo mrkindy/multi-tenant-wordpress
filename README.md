@@ -26,7 +26,7 @@ composer require mrkindy/multi-tenant-wordpress
 Required PHP extensions are PDO, JSON, and Sodium. The control database and
 tenant databases require separate credentials. The WordPress runtime control
 database account should have read-only access to the `tenants` table. Tenant
-provisioning jobs that call `PdoTenantRepository::create()` need a separate
+provisioning jobs that call `PdoTenantRepository::create()`,`PdoTenantRepository::update()`, and `PdoTenantRepository::delete()` will need a separate
 writer account with `INSERT`, `UPDATE`, and `DELETE` access.
 
 ## Request Lifecycle
