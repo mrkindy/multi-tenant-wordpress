@@ -95,6 +95,8 @@ final class ArrayCacheTest extends TestCase
         $itemsProperty->setAccessible(true);
         $items = $itemsProperty->getValue($cache);
 
+        /** @var array<string, array{tenant: string, expiresAt: int|null}> $items */
+
         // Corrupt the encrypted data
         $items['tenant']['tenant'] = 'corrupted-data';
         $itemsProperty->setValue($cache, $items);
