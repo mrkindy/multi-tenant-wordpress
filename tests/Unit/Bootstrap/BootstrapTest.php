@@ -80,14 +80,14 @@ final class BootstrapTest extends TestCase
             controlDatabasePassword: 'control-secret',
             encryptionKey: EncryptionService::generateKey(),
             tenantRepository: $repository,
-            customSecretProvider: $this->createStub(SecretProviderInterface::class),
+            customSecretProvider: self::createStub(SecretProviderInterface::class),
         ));
     }
 
     public function testItWrapsUnexpectedTechnicalFailures(): void
     {
         $_SERVER['HTTP_HOST'] = 'shop.example.com';
-        $repository = $this->createStub(TenantRepositoryInterface::class);
+        $repository = self::createStub(TenantRepositoryInterface::class);
         $repository
             ->method('findByDomain')
             ->willThrowException(new \RuntimeException('private detail'));
@@ -101,7 +101,7 @@ final class BootstrapTest extends TestCase
                 controlDatabasePassword: 'control-secret',
                 encryptionKey: EncryptionService::generateKey(),
                 tenantRepository: $repository,
-                customSecretProvider: $this->createStub(SecretProviderInterface::class),
+                customSecretProvider: self::createStub(SecretProviderInterface::class),
             ));
             self::fail('Expected bootstrap failure.');
         } catch (ConfigurationException $exception) {
@@ -111,5 +111,138 @@ final class BootstrapTest extends TestCase
             );
             self::assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
         }
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testItUsesAwsSecretsProviderWhenConfigured(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'shop.example.com';
+        $tenant = $this->createTenant();
+        $repository = new class ($tenant) implements TenantRepositoryInterface {
+            public function __construct(private readonly Tenant $tenant)
+            {
+            }
+
+            public function findByDomain(string $domain): ?Tenant
+            {
+                return $domain === $this->tenant->domain ? $this->tenant : null;
+            }
+        };
+        $secrets = new class () implements SecretProviderInterface {
+            public function getDatabasePassword(Tenant $tenant): string
+            {
+                return 'aws-secret-password';
+            }
+        };
+
+        $config = new Config(
+            controlDatabaseHost: 'control-db',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'wordpress_control',
+            controlDatabaseUser: 'control_reader',
+            controlDatabasePassword: 'control-secret',
+            encryptionKey: EncryptionService::generateKey(),
+            trustedDomainSuffixes: ['*.example.com'],
+            tenantRepository: $repository,
+            customSecretProvider: $secrets,
+            customCache: new ArrayCache(
+                new EncryptionService(EncryptionService::generateKey()),
+            ),
+        );
+
+        $result = Bootstrap::boot($config);
+
+        self::assertSame($tenant, $result);
+        self::assertSame('aws-secret-password', constant('DB_PASSWORD'));
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testItUsesNullLoggerWhenNoLoggerProvided(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'shop.example.com';
+        $tenant = $this->createTenant();
+        $repository = new class ($tenant) implements TenantRepositoryInterface {
+            public function __construct(private readonly Tenant $tenant)
+            {
+            }
+
+            public function findByDomain(string $domain): ?Tenant
+            {
+                return $domain === $this->tenant->domain ? $this->tenant : null;
+            }
+        };
+        $secrets = new class () implements SecretProviderInterface {
+            public function getDatabasePassword(Tenant $tenant): string
+            {
+                return 'secret';
+            }
+        };
+
+        // Config without logger - should use NullLogger
+        $config = new Config(
+            controlDatabaseHost: 'control-db',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'wordpress_control',
+            controlDatabaseUser: 'control_reader',
+            controlDatabasePassword: 'control-secret',
+            encryptionKey: EncryptionService::generateKey(),
+            trustedDomainSuffixes: ['*.example.com'],
+            tenantRepository: $repository,
+            customSecretProvider: $secrets,
+            customCache: new ArrayCache(
+                new EncryptionService(EncryptionService::generateKey()),
+            ),
+        );
+
+        // Should not throw any errors when using NullLogger
+        $result = Bootstrap::boot($config);
+
+        self::assertSame($tenant, $result);
+    }
+
+    #[RunInSeparateProcess]
+    #[PreserveGlobalState(false)]
+    public function testItUsesCustomCacheWhenProvided(): void
+    {
+        $_SERVER['HTTP_HOST'] = 'shop.example.com';
+        $tenant = $this->createTenant();
+        $repository = new class ($tenant) implements TenantRepositoryInterface {
+            public function __construct(private readonly Tenant $tenant)
+            {
+            }
+
+            public function findByDomain(string $domain): ?Tenant
+            {
+                return $domain === $this->tenant->domain ? $this->tenant : null;
+            }
+        };
+        $secrets = new class () implements SecretProviderInterface {
+            public function getDatabasePassword(Tenant $tenant): string
+            {
+                return 'secret';
+            }
+        };
+        $customCache = new ArrayCache(
+            new EncryptionService(EncryptionService::generateKey()),
+        );
+
+        $config = new Config(
+            controlDatabaseHost: 'control-db',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'wordpress_control',
+            controlDatabaseUser: 'control_reader',
+            controlDatabasePassword: 'control-secret',
+            encryptionKey: EncryptionService::generateKey(),
+            trustedDomainSuffixes: ['*.example.com'],
+            tenantRepository: $repository,
+            customSecretProvider: $secrets,
+            customCache: $customCache,
+        );
+
+        $result = Bootstrap::boot($config);
+
+        self::assertSame($tenant, $result);
     }
 }

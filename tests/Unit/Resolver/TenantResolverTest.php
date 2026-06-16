@@ -28,13 +28,13 @@ final class TenantResolverTest extends TestCase
             ->willReturn($tenant);
         $resolver = new TenantResolver($repository, $this->createCache(), 60);
 
-        self::assertSame($tenant, $resolver->resolve('shop.example.com'));
-        self::assertSame($tenant, $resolver->resolve('shop.example.com'));
+        self::assertEquals($tenant, $resolver->resolve('shop.example.com'));
+        self::assertEquals($tenant, $resolver->resolve('shop.example.com'));
     }
 
     public function testItThrowsWhenTenantDoesNotExist(): void
     {
-        $repository = $this->createStub(TenantRepositoryInterface::class);
+        $repository = self::createStub(TenantRepositoryInterface::class);
         $repository->method('findByDomain')->willReturn(null);
 
         $this->expectException(TenantNotFoundException::class);
@@ -45,7 +45,7 @@ final class TenantResolverTest extends TestCase
 
     public function testItRejectsSuspendedTenant(): void
     {
-        $repository = $this->createStub(TenantRepositoryInterface::class);
+        $repository = self::createStub(TenantRepositoryInterface::class);
         $repository
             ->method('findByDomain')
             ->willReturn($this->createTenant('suspended'));

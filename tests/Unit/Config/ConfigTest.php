@@ -53,8 +53,8 @@ final class ConfigTest extends TestCase
             encryptionKey: '',
             secretProvider: 'vault',
             cacheProvider: 'redis',
-            customSecretProvider: $this->createStub(SecretProviderInterface::class),
-            customCache: $this->createStub(CacheInterface::class),
+            customSecretProvider: self::createStub(SecretProviderInterface::class),
+            customCache: self::createStub(CacheInterface::class),
         );
 
         self::assertSame('vault', $config->secretProvider);
