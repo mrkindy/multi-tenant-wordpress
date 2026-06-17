@@ -6,12 +6,18 @@ CREATE TABLE tenants (
     database_name VARCHAR(64) NOT NULL,
     database_user VARCHAR(128) NOT NULL,
     encrypted_database_password VARCHAR(2048) NOT NULL,
-    status ENUM('active', 'suspended', 'disabled') NOT NULL DEFAULT 'active',
+    status ENUM('pending', 'installing', 'installed', 'failed', 'active', 'suspended', 'disabled') NOT NULL DEFAULT 'pending',
     plan VARCHAR(64) NOT NULL,
     metadata JSON NULL,
+    installed_at TIMESTAMP NULL DEFAULT NULL,
+    wp_admin_username VARCHAR(128) NULL DEFAULT NULL,
+    wp_admin_email VARCHAR(255) NULL DEFAULT NULL,
+    installation_error TEXT NULL DEFAULT NULL,
+    installation_attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY tenants_domain_unique (domain),
-    KEY tenants_status_index (status)
+    KEY tenants_status_index (status),
+    KEY tenants_installed_at_index (installed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
