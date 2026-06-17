@@ -10,3 +10,16 @@ parameters:
     tmpDir: .phpstan-cache
     reportUnmatchedIgnoredErrors: true
     treatPhpDocTypesAsCertain: true
+    ignoreErrors:
+        # WordPress functions loaded at runtime from wp-load.php
+        - '#Function (wp_get_db_schema|dbDelta|populate_options|populate_roles|update_option|get_option|get_page_by_path|wp_delete_post|wp_delete_comment|get_comments|wp_insert_post|wp_insert_user|username_exists|sanitize_title) not found#'
+        # WordPress classes loaded at runtime
+        - '#(Instantiated class|Call to method|Access to property|Class) WP_(Post|User|Error) not found#'
+        # WordPress constants loaded at runtime
+        - '#Constant (OBJECT|ABSPATH) not found#'
+        # WordPress method calls on runtime classes
+        - '#Call to method (set_role|get_error_message)\(\) on an unknown class WP_(User|Error)#'
+        - '#Access to property \$ID on an unknown class WP_Post#'
+        # PHPUnit mock method calls in tests
+        - '#Call to an undefined method (PDO|Psr\\Log\\LoggerInterface|MrKindy\\MultiTenantWordPress\\(Contracts|Repository|Provisioning)\\[A-Za-z]+)::(expects|method)#'
+        - '#Call to static method PHPUnit\\Framework\\Assert::assertTrue\(\) with true will always evaluate to true#'

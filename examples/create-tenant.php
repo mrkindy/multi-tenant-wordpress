@@ -3,9 +3,16 @@
 declare(strict_types=1);
 
 use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
+use MrKindy\MultiTenantWordPress\Provisioning\DatabaseNameGenerator;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+
+$encryptionKey = getenv('TENANT_ENCRYPTION_KEY') ?: '';
+if ($encryptionKey === '') {
+    exit("TENANT_ENCRYPTION_KEY environment variable is required.\n");
+}
 
 $pdo = new PDO(
     sprintf(
@@ -23,16 +30,36 @@ $pdo = new PDO(
 );
 
 $repository = new PdoTenantRepository($pdo);
+$encryption = new EncryptionService($encryptionKey);
+$nameGenerator = new DatabaseNameGenerator();
+
+// Tenant details
+$domain = 'shop.example.com';
+$tenantId = uniqid('t_', true);
+
+// Generate database credentials
+$databaseName = $nameGenerator->generateDatabaseName($tenantId, $domain);
+$databaseUser = $nameGenerator->generateDatabaseUser($tenantId, $domain);
+$databasePassword = bin2hex(random_bytes(32));
+
+// Encrypt the password for storage
+$encryptedPassword = $encryption->encrypt($databasePassword);
+
+// Create tenant with 'pending' status - provisioning will happen separately
 $tenant = $repository->create(new CreateTenant(
-    domain: 'shop.example.com',
-    databaseHost: 'tenant-db-42.internal',
+    domain: $domain,
+    databaseHost: 'tenant-db.internal',
     databasePort: 3306,
-    databaseName: 'tenant_42',
-    databaseUser: 'tenant_42_user',
-    encryptedDatabasePassword: 'TENANT_42_DATABASE_PASSWORD',
-    status: 'active',
+    databaseName: $databaseName,
+    databaseUser: $databaseUser,
+    encryptedDatabasePassword: $encryptedPassword,
+    status: 'pending',
     plan: 'business',
-    metadata: ['uploads_path' => '/srv/uploads/tenant-42'],
+    metadata: [],
 ));
 
-printf("Created tenant %s for %s\n", $tenant->id, $tenant->domain);
+echo "Created tenant {$tenant->id} for {$tenant->domain}\n";
+echo "Database: {$tenant->databaseName}\n";
+echo "Database User: {$tenant->databaseUser}\n";
+echo "Status: {$tenant->status}\n";
+echo "\nNext step: Run provision-tenant.php to install WordPress.\n";

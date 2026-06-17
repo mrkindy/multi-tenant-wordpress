@@ -60,6 +60,10 @@ Bootstrap::boot(new Config(
     trustedDomainSuffixes: ['*.example.com', '*.mrkindy.com'],
     allowLocalhost: false,
     cacheTtlSeconds: 60,
+    // Provisioning configuration (optional)
+    bedrockPath: '/var/www/bedrock',
+    databaseNamePrefix: 'tenant_',
+    databaseUserPrefix: 'tenant_',
 ));
 ```
 
@@ -77,8 +81,17 @@ implementation in a multi-node deployment.
 
 ## Control Database Schema
 
-Apply [config/control-database.sql](config/control-database.sql) to a database
-that is separate from all WordPress tenant databases.
+Apply the base schema first:
+
+```bash
+mysql -u root -p wordpress_control < config/control-database.sql
+```
+
+Then apply the provisioning migration:
+
+```bash
+mysql -u root -p wordpress_control < config/control-database-provisioning.sql
+```
 
 The `encrypted_database_password` column stores an opaque reference, never a
 plaintext password:
@@ -86,12 +99,146 @@ plaintext password:
 - With `EnvSecretsProvider`, store an environment variable name such as
   `TENANT_42_DATABASE_PASSWORD`.
 - With `AwsSecretsProvider`, store an AWS Secrets Manager secret name or ARN.
+- With `EncryptedSecretProvider` (recommended for auto-provisioning), store the
+  encrypted password directly.
 
 Normalize domains to lowercase without ports or trailing dots before insert.
 Each tenant database user should have access only to its own database.
 
-Tenant records can be provisioned through `PdoTenantRepository::create()`,
-`update()`, and `delete()`:
+## Tenant Provisioning
+
+The package includes a complete automated provisioning system that creates
+databases, installs WordPress, and seeds default content.
+
+### Provisioning Flow
+
+1. **Create Tenant Record** - Insert tenant with `pending` status
+2. **Provision** - Run the provisioner which:
+   - Creates database and database user
+   - Installs WordPress schema using `dbDelta()`
+   - Seeds default pages (Home, Privacy Policy, Terms)
+   - Creates WordPress admin account
+   - Marks tenant as `installed` then `active`
+
+### Quick Provisioning Example
+
+```php
+use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
+use MrKindy\MultiTenantWordPress\DTO\ProvisioningAdminCredentials;
+use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
+use MrKindy\MultiTenantWordPress\Provisioning\DatabaseManager;
+use MrKindy\MultiTenantWordPress\Provisioning\DatabaseNameGenerator;
+use MrKindy\MultiTenantWordPress\Provisioning\TenantProvisioner;
+use MrKindy\MultiTenantWordPress\Provisioning\WordPressBootstrapper;
+use MrKindy\MultiTenantWordPress\Provisioning\WordPressInstaller;
+use MrKindy\MultiTenantWordPress\Provisioning\DefaultDataSeeder;
+use MrKindy\MultiTenantWordPress\Provisioning\AdminAccountSeeder;
+use MrKindy\MultiTenantWordPress\Provisioning\WooCommerceSeeder;
+use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
+use MrKindy\MultiTenantWordPress\Secrets\EncryptedSecretProvider;
+
+// Services
+$encryption = new EncryptionService($encryptionKey);
+$repository = new PdoTenantRepository($controlPdo);
+$databaseManager = new DatabaseManager($controlPdo);
+$secretProvider = new EncryptedSecretProvider($encryption);
+$bootstrapper = new WordPressBootstrapper('/var/www/bedrock');
+
+$provisioner = new TenantProvisioner(
+    $repository,
+    $secretProvider,
+    $databaseManager,
+    new WordPressInstaller($bootstrapper),
+    new DefaultDataSeeder($bootstrapper),
+    new AdminAccountSeeder($bootstrapper),
+    new WooCommerceSeeder($bootstrapper),
+);
+
+// Create tenant with encrypted password
+$tenantPassword = bin2hex(random_bytes(32));
+$tenant = $repository->create(new CreateTenant(
+    domain: 'shop.example.com',
+    databaseHost: 'tenant-db.internal',
+    databasePort: 3306,
+    databaseName: 'tenant_shop',
+    databaseUser: 'tenant_shop_user',
+    encryptedDatabasePassword: $encryption->encrypt($tenantPassword),
+    status: 'pending',
+    plan: 'business',
+    metadata: [],
+));
+
+// Provision
+$result = $provisioner->provision(
+    $tenant,
+    new ProvisioningAdminCredentials(
+        username: 'admin',
+        email: 'admin@example.com',
+        password: bin2hex(random_bytes(16)),
+    )
+);
+
+echo "Provisioned: {$result->tenant->domain}\n";
+echo "Admin: {$result->adminCredentials->username}\n";
+```
+
+See [examples/create-tenant.php](examples/create-tenant.php) and
+[examples/provision-tenant.php](examples/provision-tenant.php) for complete
+standalone examples.
+
+### Provisioning Status States
+
+- `pending` - Tenant record created, awaiting provisioning
+- `installing` - Provisioning is in progress
+- `installed` - WordPress installed, awaiting activation
+- `active` - Tenant is live and serving requests
+- `suspended` - Tenant temporarily disabled
+- `disabled` - Tenant permanently disabled
+- `failed` - Provisioning failed, check `installation_error`
+
+### Database Credentials for Provisioning
+
+Provisioning requires elevated database privileges:
+
+```sql
+-- Create provisioning user
+CREATE USER 'wordpress_control_provisioning'@'%' IDENTIFIED BY 'strong_password';
+GRANT CREATE, DROP, CREATE USER, GRANT OPTION ON *.* TO 'wordpress_control_provisioning'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE ON wordpress_control.* TO 'wordpress_control_provisioning'@'%';
+FLUSH PRIVILEGES;
+```
+
+The runtime WordPress user only needs:
+
+```sql
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, DROP ON tenant_db.* TO 'tenant_user'@'%';
+```
+
+### Asynchronous Provisioning with Events
+
+For production, dispatch provisioning jobs asynchronously:
+
+```php
+use MrKindy\MultiTenantWordPress\Events\TenantCreated;
+use MrKindy\MultiTenantWordPress\Provisioning\ProvisionTenantListener;
+use MrKindy\MultiTenantWordPress\Queue\SynchronousJobDispatcher;
+
+// Create event dispatcher (or use Laravel/Symfony)
+$dispatcher = new InMemoryEventDispatcher();
+
+// Subscribe listener
+$listener = new ProvisionTenantListener(
+    new SynchronousJobDispatcher(), // Replace with your queue
+);
+$dispatcher->subscribe(TenantCreated::class, $listener);
+
+// Dispatch event after creating tenant
+$dispatcher->dispatch(new TenantCreated($tenant));
+```
+
+## Manual Tenant Management
+
+Tenant records can be managed through `PdoTenantRepository`:
 
 ```php
 use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
@@ -128,11 +275,11 @@ $tenant = $repository->update(new UpdateTenant(
 $deleted = $repository->delete('42');
 ```
 
-See [examples/create-tenant.php](examples/create-tenant.php),
-[examples/update-tenant.php](examples/update-tenant.php), and
+See [examples/update-tenant.php](examples/update-tenant.php) and
 [examples/delete-tenant.php](examples/delete-tenant.php) for standalone
-provisioning examples. Custom provisioning repositories can implement
+examples. Custom provisioning repositories can implement
 `TenantProvisioningRepositoryInterface` without changing runtime tenant lookup.
+
 The equivalent SQL record is:
 
 ```sql
@@ -255,6 +402,8 @@ Secret-provider references remain the recommended runtime model.
   `ConfigurationException`.
 - Database constants are defined only when absent; pre-existing constants are
   not overwritten.
+- Provisioning uses separate credentials with elevated privileges.
+- Encrypted passwords are stored in the tenant record, never plaintext.
 
 Behind a reverse proxy, configure the proxy to replace the incoming `Host`
 header and allow only expected virtual hosts. This package deliberately does
@@ -322,3 +471,15 @@ Do not define database constants once and then reuse the same PHP worker for
 different hosts. WordPress database constants are process-global and cannot be
 changed. FrankenPHP worker mode or other persistent runtimes must isolate one
 tenant per worker/process or use non-worker request execution.
+
+**Provisioning fails with database error**
+
+Ensure the provisioning database user has `CREATE`, `DROP`, `CREATE USER`, and
+`GRANT OPTION` privileges. Check `installation_error` column in the tenants
+table for specific error messages.
+
+**Tenant stuck in 'installing' status**
+
+If provisioning is interrupted, the tenant may remain in 'installing' status.
+The provisioning system is idempotent - you can safely re-run provisioning
+for the same tenant.

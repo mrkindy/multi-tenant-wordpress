@@ -14,7 +14,7 @@ use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
 use PDO;
 use PDOStatement;
 
-final readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantProvisioningRepositoryInterface
+readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantProvisioningRepositoryInterface
 {
     public function __construct(private PDO $pdo)
     {
@@ -205,6 +205,145 @@ final readonly class PdoTenantRepository implements TenantRepositoryInterface, T
     }
 
     /**
+     * Find a tenant by ID.
+     */
+    public function findById(string $id): ?Tenant
+    {
+        $statement = $this->pdo->prepare(
+            <<<'SQL'
+            SELECT
+                id,
+                domain,
+                database_host,
+                database_port,
+                database_name,
+                database_user,
+                encrypted_database_password,
+                status,
+                plan,
+                metadata
+            FROM tenants
+            WHERE id = :id
+            LIMIT 1
+            SQL,
+        );
+
+        if (!$statement instanceof PDOStatement) {
+            throw new ConfigurationException('Tenant lookup could not be prepared.');
+        }
+
+        $statement->execute(['id' => $id]);
+
+        /** @var array<string, mixed>|false $row */
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        if ($row === false) {
+            return null;
+        }
+
+        return $this->hydrate($row);
+    }
+
+    /**
+     * Update tenant status.
+     */
+    public function updateStatus(string $id, string $status): void
+    {
+        $statement = $this->pdo->prepare(
+            <<<'SQL'
+            UPDATE tenants
+            SET status = :status
+            WHERE id = :id
+            SQL,
+        );
+
+        if (!$statement instanceof PDOStatement) {
+            throw new ConfigurationException('Status update could not be prepared.');
+        }
+
+        $statement->execute([
+            'id' => $id,
+            'status' => strtolower($status),
+        ]);
+    }
+
+    /**
+     * Mark tenant as installed with admin credentials.
+     */
+    public function markInstalled(
+        string $id,
+        string $adminUsername,
+        string $adminEmail,
+        \DateTimeImmutable $installedAt,
+    ): void {
+        $statement = $this->pdo->prepare(
+            <<<'SQL'
+            UPDATE tenants
+            SET
+                status = 'installed',
+                wp_admin_username = :admin_username,
+                wp_admin_email = :admin_email,
+                installed_at = :installed_at
+            WHERE id = :id
+            SQL,
+        );
+
+        if (!$statement instanceof PDOStatement) {
+            throw new ConfigurationException('Installation marking could not be prepared.');
+        }
+
+        $statement->execute([
+            'id' => $id,
+            'admin_username' => $adminUsername,
+            'admin_email' => $adminEmail,
+            'installed_at' => $installedAt->format('Y-m-d H:i:s'),
+        ]);
+    }
+
+    /**
+     * Record a provisioning failure.
+     */
+    public function recordFailure(string $id, string $error): void
+    {
+        $statement = $this->pdo->prepare(
+            <<<'SQL'
+            UPDATE tenants
+            SET installation_error = :error
+            WHERE id = :id
+            SQL,
+        );
+
+        if (!$statement instanceof PDOStatement) {
+            throw new ConfigurationException('Failure recording could not be prepared.');
+        }
+
+        $statement->execute([
+            'id' => $id,
+            'error' => $error,
+        ]);
+    }
+
+    /**
+     * Increment installation attempts counter.
+     */
+    public function incrementAttempts(string $id): void
+    {
+        $statement = $this->pdo->prepare(
+            <<<'SQL'
+            UPDATE tenants
+            SET installation_attempts = installation_attempts + 1
+            WHERE id = :id
+            SQL,
+        );
+
+        if (!$statement instanceof PDOStatement) {
+            throw new ConfigurationException('Attempt increment could not be prepared.');
+        }
+
+        $statement->execute(['id' => $id]);
+    }
+
+    /**
      * @param array<string, mixed> $row
      */
     private function hydrate(array $row): Tenant
@@ -258,43 +397,6 @@ final readonly class PdoTenantRepository implements TenantRepositoryInterface, T
             plan: (string) $row['plan'],
             metadata: $metadata,
         );
-    }
-
-    private function findById(string $id): ?Tenant
-    {
-        $statement = $this->pdo->prepare(
-            <<<'SQL'
-            SELECT
-                id,
-                domain,
-                database_host,
-                database_port,
-                database_name,
-                database_user,
-                encrypted_database_password,
-                status,
-                plan,
-                metadata
-            FROM tenants
-            WHERE id = :id
-            LIMIT 1
-            SQL,
-        );
-
-        if (!$statement instanceof PDOStatement) {
-            throw new ConfigurationException('Tenant lookup could not be prepared.');
-        }
-
-        $statement->execute(['id' => $id]);
-
-        /** @var array<string, mixed>|false $row */
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
-
-        if ($row === false) {
-            return null;
-        }
-
-        return $this->hydrate($row);
     }
 
     private function assertTenantCanBeSaved(CreateTenant|UpdateTenant $tenant): void
