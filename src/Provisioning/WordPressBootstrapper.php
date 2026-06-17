@@ -18,7 +18,7 @@ final class WordPressBootstrapper
     private static bool $bootstrapped = false;
 
     public function __construct(
-        private readonly string $bedrockPath,
+        private readonly string $wpPath,
     ) {
     }
 
@@ -35,7 +35,7 @@ final class WordPressBootstrapper
             return;
         }
 
-        $this->validateBedrockPath();
+        $this->validateWpPath();
         $this->defineDatabaseConstants($tenant, $password);
 
         // Prevent WordPress from redirecting to install.php
@@ -44,7 +44,7 @@ final class WordPressBootstrapper
         }
 
         // Load WordPress
-        $wpLoadPath = $this->bedrockPath . '/web/wp/wp-load.php';
+        $wpLoadPath = $this->wpPath . '/wp-load.php';
 
         if (!file_exists($wpLoadPath)) {
             throw new TenantProvisioningException(
@@ -80,28 +80,28 @@ final class WordPressBootstrapper
      *
      * @throws TenantProvisioningException If path is invalid
      */
-    private function validateBedrockPath(): void
+    private function validateWpPath(): void
     {
-        if ($this->bedrockPath === '') {
+        if ($this->wpPath === '') {
             throw new TenantProvisioningException(
-                'Bedrock path is not configured',
+                'WordPress path is not configured',
                 'validation',
                 '',
             );
         }
 
-        if (!is_dir($this->bedrockPath)) {
+        if (!is_dir($this->wpPath)) {
             throw new TenantProvisioningException(
-                "Bedrock path does not exist: {$this->bedrockPath}",
+                "WordPress path does not exist: {$this->wpPath}",
                 'validation',
                 '',
             );
         }
 
-        $wpLoadPath = $this->bedrockPath . '/web/wp/wp-load.php';
+        $wpLoadPath = $this->wpPath . '/wp-load.php';
         if (!file_exists($wpLoadPath)) {
             throw new TenantProvisioningException(
-                "Invalid Bedrock path - wp-load.php not found: {$wpLoadPath}",
+                "Invalid WordPress path - wp-load.php not found: {$wpLoadPath}",
                 'validation',
                 '',
             );

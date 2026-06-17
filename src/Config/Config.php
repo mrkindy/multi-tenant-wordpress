@@ -41,7 +41,7 @@ final readonly class Config
         public ?SecretProviderInterface $customSecretProvider = null,
         public ?CacheInterface $customCache = null,
         // Provisioning configuration
-        public string $bedrockPath = '',
+        public string $wpPath = '',
         public string $databaseNamePrefix = 'tenant_',
         public string $databaseUserPrefix = 'tenant_',
         public ?string $controlDatabaseProvisioningUser = null,

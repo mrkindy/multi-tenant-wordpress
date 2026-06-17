@@ -61,7 +61,7 @@ Bootstrap::boot(new Config(
     allowLocalhost: false,
     cacheTtlSeconds: 60,
     // Provisioning configuration (optional)
-    bedrockPath: '/var/www/bedrock',
+    wpPath: '/var/www/bedrock/web/wp',
     databaseNamePrefix: 'tenant_',
     databaseUserPrefix: 'tenant_',
 ));
@@ -302,7 +302,7 @@ upload paths.
 Require Composer and boot the package in `wp-config.php` before this line:
 
 ```php
-require_once ABSPATH . 'wp-settings.php';
+require_once getenv('WPPATH') . 'wp-settings.php';
 ```
 
 Do not define the four database constants before bootstrapping. See

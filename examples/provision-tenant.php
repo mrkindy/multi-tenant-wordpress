@@ -19,7 +19,7 @@ use MrKindy\MultiTenantWordPress\Secrets\EncryptedSecretProvider;
 require_once __DIR__ . '/../vendor/autoload.php';
 
 // Configuration
-$bedrockPath = getenv('BEDROCK_PATH') ?: '/var/www/bedrock';
+$wpPath = getenv('WPPATH') ?: '/var/www/bedrock/web/wp';
 $encryptionKey = getenv('TENANT_ENCRYPTION_KEY') ?: '';
 
 if ($encryptionKey === '') {
@@ -47,7 +47,7 @@ $encryption = new EncryptionService($encryptionKey);
 $repository = new PdoTenantRepository($controlPdo);
 $databaseManager = new DatabaseManager($controlPdo);
 $secretProvider = new EncryptedSecretProvider($encryption);
-$bootstrapper = new WordPressBootstrapper($bedrockPath);
+$bootstrapper = new WordPressBootstrapper($wpPath);
 $wordpressInstaller = new WordPressInstaller($bootstrapper);
 $dataSeeder = new DefaultDataSeeder($bootstrapper);
 $adminSeeder = new AdminAccountSeeder($bootstrapper);

@@ -77,8 +77,8 @@ readonly class WordPressInstaller
      */
     private function loadWordPressAdminFiles(): void
     {
-        $schemaFile = ABSPATH . 'wp-admin/includes/schema.php';
-        $upgradeFile = ABSPATH . 'wp-admin/includes/upgrade.php';
+        $schemaFile = getenv('WPPATH') . 'wp-admin/includes/schema.php';
+        $upgradeFile = getenv('WPPATH') . 'wp-admin/includes/upgrade.php';
 
         if (!file_exists($schemaFile)) {
             throw new TenantProvisioningException(

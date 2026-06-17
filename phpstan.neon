@@ -16,7 +16,7 @@ parameters:
         # WordPress classes loaded at runtime
         - '#(Instantiated class|Call to method|Access to property|Class) WP_(Post|User|Error) not found#'
         # WordPress constants loaded at runtime
-        - '#Constant (OBJECT|ABSPATH) not found#'
+        - '#Constant (OBJECT|WPPATH) not found#'
         # WordPress method calls on runtime classes
         - '#Call to method (set_role|get_error_message)\(\) on an unknown class WP_(User|Error)#'
         - '#Access to property \$ID on an unknown class WP_Post#'
