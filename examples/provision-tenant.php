@@ -10,7 +10,7 @@ use MrKindy\MultiTenantWordPress\Provisioning\DatabaseManager;
 use MrKindy\MultiTenantWordPress\Provisioning\DatabaseNameGenerator;
 use MrKindy\MultiTenantWordPress\Provisioning\DefaultDataSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\TenantProvisioner;
-use MrKindy\MultiTenantWordPress\Provisioning\WooCommerceSeeder;
+use MrKindy\MultiTenantWordPress\Provisioning\AdditionalSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\WordPressBootstrapper;
 use MrKindy\MultiTenantWordPress\Provisioning\WordPressInstaller;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
@@ -51,7 +51,7 @@ $bootstrapper = new WordPressBootstrapper($wpPath);
 $wordpressInstaller = new WordPressInstaller($bootstrapper);
 $dataSeeder = new DefaultDataSeeder($bootstrapper);
 $adminSeeder = new AdminAccountSeeder($bootstrapper);
-$wooCommerceSeeder = new WooCommerceSeeder($bootstrapper);
+$additionalSeeder = new AdditionalSeeder($bootstrapper);
 
 // Create tenant record first
 $tenantPassword = bin2hex(random_bytes(32));
@@ -79,7 +79,7 @@ $provisioner = new TenantProvisioner(
     $wordpressInstaller,
     $dataSeeder,
     $adminSeeder,
-    $wooCommerceSeeder,
+    $additionalSeeder,
 );
 
 $adminCredentials = new ProvisioningAdminCredentials(

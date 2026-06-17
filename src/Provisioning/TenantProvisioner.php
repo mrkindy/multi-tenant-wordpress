@@ -37,8 +37,8 @@ readonly class TenantProvisioner
         private WordPressInstaller $wordpressInstaller,
         private DefaultDataSeeder $dataSeeder,
         private AdminAccountSeeder $adminSeeder,
-        private WooCommerceSeeder $wooCommerceSeeder,
-        private LoggerInterface $logger = new NullLogger(),
+        private ?AdditionalSeeder $additionalSeeder = null,
+        private ?LoggerInterface $logger = new NullLogger(),
     ) {
     }
 
@@ -127,10 +127,12 @@ readonly class TenantProvisioner
             $this->adminSeeder->createAdmin($tenant, $password, $admin);
 
             // Step 6: WooCommerce seeding (stub)
-            $this->logger->debug('Seeding WooCommerce data', [
-                'tenant_id' => $tenant->id,
-            ]);
-            $this->wooCommerceSeeder->seed($tenant, $password);
+            if ($this->additionalSeeder !== null) {
+                $this->logger->debug('Seeding WooCommerce data', [
+                    'tenant_id' => $tenant->id,
+                ]);
+                $this->additionalSeeder->seed($tenant, $password);
+            }
 
             // Step 7: Mark installation complete
             $this->markInstallationComplete($tenant->id, $admin);

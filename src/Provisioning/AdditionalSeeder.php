@@ -7,13 +7,13 @@ namespace MrKindy\MultiTenantWordPress\Provisioning;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 
 /**
- * WooCommerce data seeder - stub implementation.
+ * Additional data seeder - stub implementation.
  *
- * This class is a placeholder for future WooCommerce integration.
+ * This class is a placeholder for future additional integration.
  * Currently performs no operations but maintains the interface
  * for dependency injection and future expansion.
  */
-readonly class WooCommerceSeeder
+readonly class AdditionalSeeder
 {
     public function __construct(
         private WordPressBootstrapper $bootstrapper,
@@ -21,12 +21,12 @@ readonly class WooCommerceSeeder
     }
 
     /**
-     * Seed WooCommerce data for the tenant.
+     * Seed additional data for the tenant.
      *
      * Currently a no-op stub. Future implementation will:
-     * - Create WooCommerce pages (Shop, Cart, Checkout, My Account)
-     * - Configure WooCommerce settings
-     * - Set up default product categories
+     * - Create additional pages
+     * - Configure additional settings
+     * - Set up default content
      * - Configure tax and shipping zones
      *
      * @param Tenant $tenant The tenant being provisioned

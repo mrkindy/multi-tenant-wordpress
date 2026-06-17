@@ -12,7 +12,7 @@ use MrKindy\MultiTenantWordPress\Provisioning\AdminAccountSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\DatabaseManager;
 use MrKindy\MultiTenantWordPress\Provisioning\DefaultDataSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\TenantProvisioner;
-use MrKindy\MultiTenantWordPress\Provisioning\WooCommerceSeeder;
+use MrKindy\MultiTenantWordPress\Provisioning\AdditionalSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\WordPressInstaller;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 use PHPUnit\Framework\TestCase;
@@ -27,7 +27,7 @@ final class TenantProvisionerTest extends TestCase
     private WordPressInstaller $wordpressInstaller;
     private DefaultDataSeeder $dataSeeder;
     private AdminAccountSeeder $adminSeeder;
-    private WooCommerceSeeder $wooCommerceSeeder;
+    private AdditionalSeeder $additionalSeeder;
     private LoggerInterface $logger;
 
     protected function setUp(): void
@@ -38,7 +38,7 @@ final class TenantProvisionerTest extends TestCase
         $this->wordpressInstaller = $this->createMock(WordPressInstaller::class);
         $this->dataSeeder = $this->createMock(DefaultDataSeeder::class);
         $this->adminSeeder = $this->createMock(AdminAccountSeeder::class);
-        $this->wooCommerceSeeder = $this->createMock(WooCommerceSeeder::class);
+        $this->additionalSeeder = $this->createMock(additionalSeeder::class);
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->provisioner = new TenantProvisioner(
@@ -48,7 +48,7 @@ final class TenantProvisionerTest extends TestCase
             $this->wordpressInstaller,
             $this->dataSeeder,
             $this->adminSeeder,
-            $this->wooCommerceSeeder,
+            $this->additionalSeeder,
             $this->logger,
         );
     }
@@ -102,7 +102,7 @@ final class TenantProvisionerTest extends TestCase
         $this->wordpressInstaller->method('install');
         $this->dataSeeder->method('seed')->willReturn([]);
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $this->provisioner->provision($tenant, $admin);
@@ -128,7 +128,7 @@ final class TenantProvisionerTest extends TestCase
         $this->wordpressInstaller->method('install');
         $this->dataSeeder->method('seed')->willReturn([]);
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $this->provisioner->provision($tenant, $admin);
@@ -151,7 +151,7 @@ final class TenantProvisionerTest extends TestCase
         // Mock remaining steps
         $this->dataSeeder->method('seed')->willReturn([]);
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $this->provisioner->provision($tenant, $admin);
@@ -175,7 +175,7 @@ final class TenantProvisionerTest extends TestCase
 
         // Mock remaining steps
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $result = $this->provisioner->provision($tenant, $admin);
@@ -200,7 +200,7 @@ final class TenantProvisionerTest extends TestCase
             ->with($tenant, 'secret123', $admin);
 
         // Mock remaining steps
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $this->provisioner->provision($tenant, $admin);
@@ -218,7 +218,7 @@ final class TenantProvisionerTest extends TestCase
         $this->wordpressInstaller->method('install');
         $this->dataSeeder->method('seed')->willReturn([]);
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
 
         $this->repository->expects(self::once())
             ->method('markInstalled')
@@ -289,7 +289,7 @@ final class TenantProvisionerTest extends TestCase
         $this->wordpressInstaller->method('install');
         $this->dataSeeder->method('seed')->willReturn([]);
         $this->adminSeeder->method('createAdmin');
-        $this->wooCommerceSeeder->method('seed');
+        $this->additionalSeeder->method('seed');
         $this->repository->method('markInstalled');
 
         $this->provisioner->provision($tenant, $admin);

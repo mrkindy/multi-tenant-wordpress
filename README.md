@@ -133,7 +133,7 @@ use MrKindy\MultiTenantWordPress\Provisioning\WordPressBootstrapper;
 use MrKindy\MultiTenantWordPress\Provisioning\WordPressInstaller;
 use MrKindy\MultiTenantWordPress\Provisioning\DefaultDataSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\AdminAccountSeeder;
-use MrKindy\MultiTenantWordPress\Provisioning\WooCommerceSeeder;
+use MrKindy\MultiTenantWordPress\Provisioning\AdditionalSeeder;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 use MrKindy\MultiTenantWordPress\Secrets\EncryptedSecretProvider;
 
@@ -151,7 +151,7 @@ $provisioner = new TenantProvisioner(
     new WordPressInstaller($bootstrapper),
     new DefaultDataSeeder($bootstrapper),
     new AdminAccountSeeder($bootstrapper),
-    new WooCommerceSeeder($bootstrapper),
+    new AdditionalSeeder($bootstrapper),
 );
 
 // Create tenant with encrypted password
