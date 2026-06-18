@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace MrKindy\MultiTenantWordPress\Config;
 
 use MrKindy\MultiTenantWordPress\Contracts\CacheInterface;
+use MrKindy\MultiTenantWordPress\Contracts\DatabaseNameGeneratorInterface;
+use MrKindy\MultiTenantWordPress\Contracts\EventDispatcherInterface;
+use MrKindy\MultiTenantWordPress\Contracts\JobDispatcherInterface;
 use MrKindy\MultiTenantWordPress\Contracts\SecretProviderInterface;
 use MrKindy\MultiTenantWordPress\Contracts\TenantRepositoryInterface;
 use MrKindy\MultiTenantWordPress\Exceptions\ConfigurationException;
@@ -37,6 +40,15 @@ final readonly class Config
         public ?TenantRepositoryInterface $tenantRepository = null,
         public ?SecretProviderInterface $customSecretProvider = null,
         public ?CacheInterface $customCache = null,
+        // Provisioning configuration
+        public string $wpPath = '',
+        public string $databaseNamePrefix = 'tenant_',
+        public string $databaseUserPrefix = 'tenant_',
+        public ?string $controlDatabaseProvisioningUser = null,
+        public ?string $controlDatabaseProvisioningPassword = null,
+        public ?EventDispatcherInterface $eventDispatcher = null,
+        public ?JobDispatcherInterface $jobDispatcher = null,
+        public ?DatabaseNameGeneratorInterface $databaseNameGenerator = null,
     ) {
         if (
             $this->controlDatabaseHost === ''

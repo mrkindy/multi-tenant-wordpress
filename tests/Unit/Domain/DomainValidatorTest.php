@@ -63,4 +63,207 @@ final class DomainValidatorTest extends TestCase
             (new DomainValidator(true))->normalizeAndValidate('LOCALHOST:8080'),
         );
     }
+
+    public function testItRejectsEmptyString(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('');
+    }
+
+    public function testItRejectsWhitespaceOnly(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('   ');
+    }
+
+    public function testItRejectsNullByteInjection(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate("example.com\x00attacker.com");
+    }
+
+    public function testItRejectsControlCharacters(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate("example.com\x01\x02");
+    }
+
+    public function testItRejectsDelCharacter(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate("example.com\x7f");
+    }
+
+    public function testItRejectsDoubleColonInPort(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com::8080');
+    }
+
+    public function testItRejectsEmptyPort(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com:');
+    }
+
+    public function testItRejectsPortZero(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com:0');
+    }
+
+    public function testItRejectsPortTooHigh(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com:65536');
+    }
+
+    public function testItRejectsNegativePort(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com:-1');
+    }
+
+    public function testItRejectsNonNumericPort(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example.com:abc');
+    }
+
+    public function testItRejectsDomainTooLong(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        // Create a domain longer than 253 characters
+        $longDomain = str_repeat('a', 250) . '.com';
+        (new DomainValidator())->normalizeAndValidate($longDomain);
+    }
+
+    public function testItRejectsInvalidDomainCharacters(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('test@example.com');
+    }
+
+    public function testItRejectsDomainWithSpace(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate('example .com');
+    }
+
+    public function testItRejectsDomainWithTab(): void
+    {
+        $this->expectException(InvalidDomainException::class);
+
+        (new DomainValidator())->normalizeAndValidate("example\t.com");
+    }
+
+    public function testItAcceptsSubdomainWithHyphen(): void
+    {
+        self::assertSame(
+            'my-shop.example.com',
+            (new DomainValidator())->normalizeAndValidate('my-shop.example.com'),
+        );
+    }
+
+    public function testItAcceptsSubdomainWithNumbers(): void
+    {
+        self::assertSame(
+            'shop123.example.com',
+            (new DomainValidator())->normalizeAndValidate('shop123.example.com'),
+        );
+    }
+
+    public function testItAcceptsDomainStartingWithNumber(): void
+    {
+        self::assertSame(
+            '123example.com',
+            (new DomainValidator())->normalizeAndValidate('123example.com'),
+        );
+    }
+
+    public function testItAcceptsSingleLabelDomain(): void
+    {
+        self::assertSame(
+            'localhost',
+            (new DomainValidator(true))->normalizeAndValidate('localhost'),
+        );
+    }
+
+    public function testItAcceptsPort80(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com:80'),
+        );
+    }
+
+    public function testItAcceptsPort443(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com:443'),
+        );
+    }
+
+    public function testItAcceptsPort8080(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com:8080'),
+        );
+    }
+
+    public function testItAcceptsPort65535(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com:65535'),
+        );
+    }
+
+    public function testItAcceptsDomainWithTrailingDot(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com.'),
+        );
+    }
+
+    public function testItAcceptsDomainWithMultipleTrailingDots(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('example.com...'),
+        );
+    }
+
+    public function testItAcceptsUppercaseLetters(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('EXAMPLE.COM'),
+        );
+    }
+
+    public function testItAcceptsMixedCase(): void
+    {
+        self::assertSame(
+            'example.com',
+            (new DomainValidator())->normalizeAndValidate('ExAmPlE.CoM'),
+        );
+    }
 }

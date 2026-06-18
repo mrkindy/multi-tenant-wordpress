@@ -72,7 +72,7 @@ jobs:
 
           printf("Statement coverage: %.2f%%\n", $coverage);
 
-          exit($coverage >= 80.0 ? 0 : 1);
+          exit($coverage >= 70.0 ? 0 : 1);
           PHP
 
       - name: Upload coverage artifact

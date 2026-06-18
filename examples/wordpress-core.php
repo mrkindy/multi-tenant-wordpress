@@ -35,4 +35,4 @@ try {
 }
 
 // Continue with the normal wp-config.php content, then load WordPress.
-require_once ABSPATH . 'wp-settings.php';
+require_once getenv('WPPATH') . 'wp-settings.php';
