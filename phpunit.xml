@@ -17,6 +17,15 @@
         <include>
             <directory suffix=".php">src</directory>
         </include>
+        <exclude>
+            <!-- AWS SDK wrapper - tested indirectly through AwsSecretsProvider -->
+            <file>src/Secrets/AwsSecretsManagerClient.php</file>
+            <!-- WordPress-dependent classes - require actual WordPress installation -->
+            <file>src/Provisioning/AdminAccountSeeder.php</file>
+            <file>src/Provisioning/DefaultDataSeeder.php</file>
+            <file>src/Provisioning/WordPressInstaller.php</file>
+            <file>src/Provisioning/AdditionalSeeder.php</file>
+        </exclude>
     </source>
     <coverage>
         <report>

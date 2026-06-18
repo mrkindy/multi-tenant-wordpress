@@ -33,7 +33,12 @@ final class PdoTenantRepositoryTest extends TestCase
                 encrypted_database_password TEXT NOT NULL,
                 status TEXT NOT NULL,
                 plan TEXT NOT NULL,
-                metadata TEXT NULL
+                metadata TEXT NULL,
+                wp_admin_username TEXT NULL,
+                wp_admin_email TEXT NULL,
+                installed_at TEXT NULL,
+                installation_error TEXT NULL,
+                installation_attempts INTEGER DEFAULT 0
             )
             SQL,
         );
@@ -417,6 +422,290 @@ final class PdoTenantRepositoryTest extends TestCase
 
         self::assertNotNull($tenant);
         self::assertSame('active', $tenant->status);
+    }
+
+    public function testItFindsTenantById(): void
+    {
+        $this->insertTenant('shop.example.com', '{"region":"eu-central-1"}');
+
+        $tenant = $this->repository->findById('1');
+
+        self::assertNotNull($tenant);
+        self::assertSame('1', $tenant->id);
+        self::assertSame('shop.example.com', $tenant->domain);
+        self::assertSame(['region' => 'eu-central-1'], $tenant->metadata);
+    }
+
+    public function testItReturnsNullForUnknownId(): void
+    {
+        self::assertNull($this->repository->findById('999'));
+    }
+
+    public function testItUpdatesTenantStatus(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $this->repository->updateStatus('1', 'INSTALLING');
+
+        $tenant = $this->repository->findById('1');
+        self::assertNotNull($tenant);
+        self::assertSame('installing', $tenant->status);
+    }
+
+    public function testItMarksTenantAsInstalled(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+        $installedAt = new \DateTimeImmutable('2024-01-15 10:30:00');
+
+        $this->repository->markInstalled('1', 'admin_user', 'admin@example.com', $installedAt);
+
+        // Verify by checking the database directly since markInstalled doesn't return the tenant
+        $statement = $this->pdo->query("SELECT status, wp_admin_username, wp_admin_email, installed_at FROM tenants WHERE id = 1");
+        self::assertInstanceOf(PDOStatement::class, $statement);
+        $row = $statement->fetch(PDO::FETCH_ASSOC);
+
+        self::assertSame('installed', $row['status']);
+        self::assertSame('admin_user', $row['wp_admin_username']);
+        self::assertSame('admin@example.com', $row['wp_admin_email']);
+        self::assertSame('2024-01-15 10:30:00', $row['installed_at']);
+    }
+
+    public function testItRecordsFailure(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $this->repository->recordFailure('1', 'Database connection failed');
+
+        $statement = $this->pdo->query("SELECT installation_error FROM tenants WHERE id = 1");
+        self::assertInstanceOf(PDOStatement::class, $statement);
+        $error = $statement->fetchColumn();
+
+        self::assertSame('Database connection failed', $error);
+    }
+
+    public function testItIncrementsAttempts(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $this->repository->incrementAttempts('1');
+        $this->repository->incrementAttempts('1');
+
+        $statement = $this->pdo->query("SELECT installation_attempts FROM tenants WHERE id = 1");
+        self::assertInstanceOf(PDOStatement::class, $statement);
+        $attempts = $statement->fetchColumn();
+
+        self::assertSame(2, (int) $attempts);
+    }
+
+    public function testItCreatesTenantWithDefaultStatusAndPlan(): void
+    {
+        $tenant = $this->repository->create(new CreateTenant(
+            domain: 'default.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_default',
+            databaseUser: 'tenant_default_user',
+            encryptedDatabasePassword: 'password',
+            status: 'pending',
+            plan: 'basic',
+        ));
+
+        self::assertSame('pending', $tenant->status);
+        self::assertSame('basic', $tenant->plan);
+    }
+
+    public function testItUpdatesTenantWithDefaultStatusAndPlan(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $tenant = $this->repository->update(new UpdateTenant(
+            id: '1',
+            domain: 'updated.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_1',
+            databaseUser: 'tenant_1_user',
+            encryptedDatabasePassword: 'password',
+            status: 'pending',
+            plan: 'basic',
+        ));
+
+        self::assertNotNull($tenant);
+        self::assertSame('pending', $tenant->status);
+        self::assertSame('basic', $tenant->plan);
+    }
+
+    public function testItRejectsCreateWithEmptyDomain(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: '',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyDatabaseHost(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: '',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyDatabaseName(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: '',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyDatabaseUser(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: '',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyEncryptedPassword(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: '',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyStatus(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: '',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithEmptyPlan(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant record is malformed.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 3306,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: '',
+        ));
+    }
+
+    public function testItRejectsCreateWithInvalidPort(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 70000,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsUpdateWithInvalidPort(): void
+    {
+        $this->insertTenant('shop.example.com', null);
+
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->update(new UpdateTenant(
+            id: '1',
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: 0,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
+    }
+
+    public function testItRejectsCreateWithNegativePort(): void
+    {
+        $this->expectException(ConfigurationException::class);
+        $this->expectExceptionMessage('Tenant database port is invalid.');
+
+        $this->repository->create(new CreateTenant(
+            domain: 'test.example.com',
+            databaseHost: 'tenant-db',
+            databasePort: -1,
+            databaseName: 'tenant_test',
+            databaseUser: 'tenant_test_user',
+            encryptedDatabasePassword: 'password',
+            status: 'active',
+            plan: 'basic',
+        ));
     }
 
     private function insertTenant(string $domain, ?string $metadata): void
