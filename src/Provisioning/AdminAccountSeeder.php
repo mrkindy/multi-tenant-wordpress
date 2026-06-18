@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Creates the WordPress administrator account for a tenant.
+ *
+ * This class is idempotent - safe to run multiple times.
+ */
+
 declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
@@ -8,11 +14,6 @@ use MrKindy\MultiTenantWordPress\DTO\ProvisioningAdminCredentials;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 
-/**
- * Creates the WordPress administrator account for a tenant.
- *
- * This class is idempotent - safe to run multiple times.
- */
 readonly class AdminAccountSeeder
 {
     public function __construct(
