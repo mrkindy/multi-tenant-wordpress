@@ -7,7 +7,6 @@ use MrKindy\MultiTenantWordPress\DTO\ProvisioningAdminCredentials;
 use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Provisioning\AdminAccountSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\DatabaseManager;
-use MrKindy\MultiTenantWordPress\Provisioning\DatabaseNameGenerator;
 use MrKindy\MultiTenantWordPress\Provisioning\DefaultDataSeeder;
 use MrKindy\MultiTenantWordPress\Provisioning\TenantProvisioner;
 use MrKindy\MultiTenantWordPress\Provisioning\AdditionalSeeder;

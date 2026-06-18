@@ -6,7 +6,6 @@ namespace MrKindy\MultiTenantWordPress\Provisioning;
 
 use DateTimeImmutable;
 use MrKindy\MultiTenantWordPress\Contracts\SecretProviderInterface;
-use MrKindy\MultiTenantWordPress\Contracts\TenantProvisioningRepositoryInterface;
 use MrKindy\MultiTenantWordPress\DTO\ProvisioningAdminCredentials;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\DTO\TenantProvisioningResult;
@@ -126,9 +125,9 @@ readonly class TenantProvisioner
             ]);
             $this->adminSeeder->createAdmin($tenant, $password, $admin);
 
-            // Step 6: WooCommerce seeding (stub)
+            // Step 6: Additional seeding (stub)
             if ($this->additionalSeeder !== null) {
-                $this->logger->debug('Seeding WooCommerce data', [
+                $this->logger->debug('Seeding additional data', [
                     'tenant_id' => $tenant->id,
                 ]);
                 $this->additionalSeeder->seed($tenant, $password);
