@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Seeds default WordPress content for a new tenant.
+ *
+ * Creates default pages and configures WordPress options.
+ * This class is idempotent - safe to run multiple times.
+ */
+
 declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
@@ -8,12 +15,6 @@ use MrKindy\MultiTenantWordPress\DTO\ProvisioningAdminCredentials;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 
-/**
- * Seeds default WordPress content for a new tenant.
- *
- * Creates default pages and configures WordPress options.
- * This class is idempotent - safe to run multiple times.
- */
 readonly class DefaultDataSeeder
 {
     private const PROVISION_MARK_OPTION = 'tenant_provision_mark';

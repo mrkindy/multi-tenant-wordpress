@@ -1,11 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
-namespace MrKindy\MultiTenantWordPress\Provisioning;
-
-use MrKindy\MultiTenantWordPress\DTO\Tenant;
-
 /**
  * Additional data seeder - stub implementation.
  *
@@ -13,6 +7,13 @@ use MrKindy\MultiTenantWordPress\DTO\Tenant;
  * Currently performs no operations but maintains the interface
  * for dependency injection and future expansion.
  */
+
+declare(strict_types=1);
+
+namespace MrKindy\MultiTenantWordPress\Provisioning;
+
+use MrKindy\MultiTenantWordPress\DTO\Tenant;
+
 readonly class AdditionalSeeder
 {
     public function __construct(

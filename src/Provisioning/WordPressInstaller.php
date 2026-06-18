@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Installs WordPress schema using WordPress Core APIs.
+ *
+ * Uses wp-admin/includes/schema.php and wp-admin/includes/upgrade.php
+ * to ensure compatibility with future WordPress versions.
+ */
+
 declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
@@ -7,12 +14,6 @@ namespace MrKindy\MultiTenantWordPress\Provisioning;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 
-/**
- * Installs WordPress schema using WordPress Core APIs.
- *
- * Uses wp-admin/includes/schema.php and wp-admin/includes/upgrade.php
- * to ensure compatibility with future WordPress versions.
- */
 readonly class WordPressInstaller
 {
     public function __construct(

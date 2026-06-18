@@ -1,5 +1,19 @@
 <?php
 
+/**
+ * Orchestrates the complete tenant provisioning process.
+ *
+ * This class coordinates all provisioning steps:
+ * 1. Database creation
+ * 2. Database user creation
+ * 3. WordPress schema installation
+ * 4. Default data seeding
+ * 5. Admin account creation
+ * 6. Mark installation complete
+ *
+ * All steps are idempotent and safe to retry.
+ */
+
 declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
@@ -14,19 +28,6 @@ use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
-/**
- * Orchestrates the complete tenant provisioning process.
- *
- * This class coordinates all provisioning steps:
- * 1. Database creation
- * 2. Database user creation
- * 3. WordPress schema installation
- * 4. Default data seeding
- * 5. Admin account creation
- * 6. Mark installation complete
- *
- * All steps are idempotent and safe to retry.
- */
 readonly class TenantProvisioner
 {
     public function __construct(
@@ -37,7 +38,7 @@ readonly class TenantProvisioner
         private DefaultDataSeeder $dataSeeder,
         private AdminAccountSeeder $adminSeeder,
         private ?AdditionalSeeder $additionalSeeder = null,
-        private ?LoggerInterface $logger = new NullLogger(),
+        private LoggerInterface $logger = new NullLogger(),
     ) {
     }
 

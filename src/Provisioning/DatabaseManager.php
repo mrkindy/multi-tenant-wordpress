@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * Manages tenant database infrastructure using PDO.
+ *
+ * Supports MySQL, MariaDB, and Amazon RDS.
+ * Uses IF NOT EXISTS for idempotent operations.
+ */
+
 declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
@@ -9,12 +16,6 @@ use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 use PDO;
 use PDOException;
 
-/**
- * Manages tenant database infrastructure using PDO.
- *
- * Supports MySQL, MariaDB, and Amazon RDS.
- * Uses IF NOT EXISTS for idempotent operations.
- */
 readonly class DatabaseManager implements DatabaseManagerInterface
 {
     public function __construct(

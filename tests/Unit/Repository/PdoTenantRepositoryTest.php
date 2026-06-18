@@ -460,9 +460,11 @@ final class PdoTenantRepositoryTest extends TestCase
         $this->repository->markInstalled('1', 'admin_user', 'admin@example.com', $installedAt);
 
         // Verify by checking the database directly since markInstalled doesn't return the tenant
-        $statement = $this->pdo->query("SELECT status, wp_admin_username, wp_admin_email, installed_at FROM tenants WHERE id = 1");
+        $statement = $this->pdo
+            ->query("SELECT status, wp_admin_username, wp_admin_email, installed_at FROM tenants WHERE id = 1");
         self::assertInstanceOf(PDOStatement::class, $statement);
         $row = $statement->fetch(PDO::FETCH_ASSOC);
+        self::assertIsArray($row);
 
         self::assertSame('installed', $row['status']);
         self::assertSame('admin_user', $row['wp_admin_username']);
