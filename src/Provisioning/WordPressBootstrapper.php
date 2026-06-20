@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Provisioning;
 
+use MrKindy\MultiTenantWordPress\Config\Config;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 
@@ -19,6 +20,7 @@ final class WordPressBootstrapper
 
     public function __construct(
         private readonly string $wpPath,
+        private readonly Config $config,
     ) {
     }
 
@@ -37,6 +39,7 @@ final class WordPressBootstrapper
 
         $this->validateWpPath();
         $this->defineDatabaseConstants($tenant, $password);
+        $this->defineStorageConstants($tenant);
 
         // Prevent WordPress from redirecting to install.php
         if (!defined('WP_INSTALLING')) {
@@ -142,6 +145,40 @@ final class WordPressBootstrapper
         }
         if (!defined('DB_COLLATE')) {
             define('DB_COLLATE', 'utf8mb4_unicode_ci');
+        }
+    }
+
+    /**
+     * Define storage constants based on the storage provider.
+     */
+    private function defineStorageConstants(Tenant $tenant): void
+    {
+        if ($this->config->storageProvider === Config::STORAGE_PROVIDER_DISK) {
+            // Local disk storage - define UPLOADS constant like WordPress
+            $uploadsPath = $this->config->storageBasePath . $tenant->storageFolder . '/uploads/';
+            if (!defined('UPLOADS')) {
+                define('UPLOADS', $uploadsPath);
+            }
+        } elseif ($this->config->storageProvider === Config::STORAGE_PROVIDER_S3) {
+            // S3 storage - define constants for S3 plugins
+            if (!defined('S3_UPLOADS_BUCKET')) {
+                define('S3_UPLOADS_BUCKET', $this->config->s3Bucket);
+            }
+            if (!defined('S3_UPLOADS_REGION')) {
+                define('S3_UPLOADS_REGION', $this->config->s3Region);
+            }
+            if (!defined('S3_UPLOADS_KEY_PREFIX')) {
+                define('S3_UPLOADS_KEY_PREFIX', $tenant->storageFolder . '/uploads/');
+            }
+
+            // Optional S3 configuration
+            if ($this->config->s3Endpoint !== '' && !defined('S3_UPLOADS_ENDPOINT')) {
+                define('S3_UPLOADS_ENDPOINT', $this->config->s3Endpoint);
+            }
+
+            if ($this->config->s3UsePathStyle && !defined('S3_UPLOADS_USE_PATH_STYLE')) {
+                define('S3_UPLOADS_USE_PATH_STYLE', true);
+            }
         }
     }
 }

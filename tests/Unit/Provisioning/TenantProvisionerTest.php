@@ -305,6 +305,7 @@ final class TenantProvisionerTest extends TestCase
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'encrypted_password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: $status,
             plan: 'business',
             metadata: [],

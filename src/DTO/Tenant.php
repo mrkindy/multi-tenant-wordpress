@@ -17,6 +17,7 @@ final readonly class Tenant
         public string $databaseName,
         public string $databaseUser,
         public string $encryptedDatabasePassword,
+        public string $storageFolder,
         public string $status,
         public string $plan,
         public array $metadata = [],

@@ -19,6 +19,8 @@ final readonly class Config
     public const SECRET_PROVIDER_AWS = 'aws';
     public const SECRET_PROVIDER_ENCRYPTED = 'encrypted';
     public const CACHE_PROVIDER_ARRAY = 'array';
+    public const STORAGE_PROVIDER_DISK = 'disk';
+    public const STORAGE_PROVIDER_S3 = 's3';
 
     /**
      * @param list<string> $trustedDomainSuffixes
@@ -51,6 +53,15 @@ final readonly class Config
         public ?EventDispatcherInterface $eventDispatcher = null,
         public ?JobDispatcherInterface $jobDispatcher = null,
         public ?DatabaseNameGeneratorInterface $databaseNameGenerator = null,
+        // Storage configuration
+        public string $storageProvider = self::STORAGE_PROVIDER_DISK,
+        public string $storageBasePath = 'wp-content/storage/',
+        public string $s3Bucket = '',
+        public string $s3Region = 'us-east-1',
+        public string $s3AccessKey = '',
+        public string $s3SecretKey = '',
+        public string $s3Endpoint = '',
+        public bool $s3UsePathStyle = false,
     ) {
         if (
             $this->controlDatabaseHost === ''
@@ -95,6 +106,16 @@ final readonly class Config
             && $this->cacheProvider !== self::CACHE_PROVIDER_ARRAY
         ) {
             throw new ConfigurationException('Cache provider is not supported.');
+        }
+
+        if (
+            !in_array(
+                $this->storageProvider,
+                [self::STORAGE_PROVIDER_DISK, self::STORAGE_PROVIDER_S3],
+                true,
+            )
+        ) {
+            throw new ConfigurationException('Storage provider is not supported.');
         }
     }
 

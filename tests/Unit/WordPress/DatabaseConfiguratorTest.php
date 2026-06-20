@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Tests\Unit\WordPress;
 
+use MrKindy\MultiTenantWordPress\Config\Config;
 use MrKindy\MultiTenantWordPress\Tests\Support\CreatesTenant;
 use MrKindy\MultiTenantWordPress\WordPress\DatabaseConfigurator;
 use PHPUnit\Framework\Attributes\PreserveGlobalState;
@@ -14,11 +15,23 @@ final class DatabaseConfiguratorTest extends TestCase
 {
     use CreatesTenant;
 
+    private function createConfig(): Config
+    {
+        return new Config(
+            controlDatabaseHost: 'localhost',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'test',
+            controlDatabaseUser: 'test',
+            controlDatabasePassword: 'test',
+            encryptionKey: base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES)),
+        );
+    }
+
     #[RunInSeparateProcess]
     #[PreserveGlobalState(false)]
     public function testItDefinesWordPressDatabaseConstants(): void
     {
-        (new DatabaseConfigurator())->configure(
+        (new DatabaseConfigurator($this->createConfig()))->configure(
             $this->createTenant(),
             'database-secret',
         );
@@ -35,7 +48,7 @@ final class DatabaseConfiguratorTest extends TestCase
     {
         define('DB_NAME', 'existing_database');
 
-        (new DatabaseConfigurator())->configure(
+        (new DatabaseConfigurator($this->createConfig()))->configure(
             $this->createTenant(),
             'database-secret',
         );

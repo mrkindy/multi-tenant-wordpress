@@ -58,7 +58,7 @@ final class Bootstrap
             $tenant = $resolver->resolve($domain);
             $password = self::secretProvider($config)->getDatabasePassword($tenant);
 
-            (new DatabaseConfigurator())->configure($tenant, $password);
+            (new DatabaseConfigurator($config))->configure($tenant, $password);
 
             return $tenant;
         } catch (

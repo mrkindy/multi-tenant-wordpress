@@ -298,6 +298,62 @@ INSERT INTO tenants (
 release isolates databases and configuration; it does not rewrite WordPress
 upload paths.
 
+## Storage Folder Isolation
+
+Each tenant gets a unique storage folder for complete file isolation. The
+`storage_folder` column stores a unique folder name generated automatically
+during tenant creation.
+
+### Storage Folder Configuration
+
+```php
+use MrKindy\MultiTenantWordPress\Config\Config;
+
+$config = new Config(
+    // ... other settings ...
+    storageBasePath: '/var/www/tenants',
+    storageFolderLength: 32,
+);
+```
+
+- `storageBasePath` - Base directory for all tenant storage folders
+- `storageFolderLength` - Length of the random folder name (default: 32)
+
+### Storage Folder Structure
+
+Each tenant's storage folder follows this pattern:
+```
+{storageBasePath}/{prefix}{tenant_id}_{random_string}/
+```
+
+Example: `/var/www/tenants/tenant_42_a7x9k2m8pQ3LwRtZvBnJy/`
+
+The folder name includes:
+- Configurable prefix (default: `tenant_`)
+- Tenant ID
+- Random alphanumeric string for security
+
+### Accessing Tenant Storage
+
+The `Tenant` DTO provides the storage folder path:
+
+```php
+$tenant = $repository->findByDomain('shop.example.com');
+$storagePath = $tenant->storageFolderPath;  // /var/www/tenants/tenant_42_a7x9k2m8pQ3LwRtZvBnJy/
+```
+
+### WordPress Uploads Configuration
+
+The bootstrap automatically configures WordPress uploads for each tenant:
+
+```php
+// In your wp-config.php or application configuration
+define('UPLOADS', $tenant->storageFolderPath . '/uploads');
+```
+
+This ensures each tenant's media files are completely isolated from other
+tenants.
+
 ## WordPress Core Integration
 
 Require Composer and boot the package in `wp-config.php` before this line:

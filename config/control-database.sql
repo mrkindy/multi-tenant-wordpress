@@ -6,6 +6,7 @@ CREATE TABLE tenants (
     database_name VARCHAR(64) NOT NULL,
     database_user VARCHAR(128) NOT NULL,
     encrypted_database_password VARCHAR(2048) NOT NULL,
+    storage_folder VARCHAR(128) NOT NULL,
     status ENUM('pending', 'installing', 'installed', 'failed', 'active', 'suspended', 'disabled') NOT NULL DEFAULT 'pending',
     plan VARCHAR(64) NOT NULL,
     metadata JSON NULL,
@@ -18,6 +19,7 @@ CREATE TABLE tenants (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY tenants_domain_unique (domain),
+    UNIQUE KEY tenants_storage_folder_unique (storage_folder),
     KEY tenants_status_index (status),
     KEY tenants_installed_at_index (installed_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

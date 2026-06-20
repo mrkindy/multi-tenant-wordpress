@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MrKindy\MultiTenantWordPress\Tests\Unit\Provisioning;
 
+use MrKindy\MultiTenantWordPress\Config\Config;
 use MrKindy\MultiTenantWordPress\DTO\Tenant;
 use MrKindy\MultiTenantWordPress\Exceptions\TenantProvisioningException;
 use MrKindy\MultiTenantWordPress\Provisioning\WordPressBootstrapper;
@@ -12,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 final class WordPressBootstrapperTest extends TestCase
 {
     private string $tempDir;
+    private Config $config;
 
     protected function setUp(): void
     {
@@ -19,6 +21,14 @@ final class WordPressBootstrapperTest extends TestCase
         WordPressBootstrapper::reset();
         $this->tempDir = sys_get_temp_dir() . '/wp_test_' . uniqid();
         mkdir($this->tempDir);
+        $this->config = new Config(
+            controlDatabaseHost: 'localhost',
+            controlDatabasePort: 3306,
+            controlDatabaseName: 'test',
+            controlDatabaseUser: 'test',
+            controlDatabasePassword: 'test',
+            encryptionKey: base64_encode(random_bytes(SODIUM_CRYPTO_SECRETBOX_KEYBYTES)),
+        );
     }
 
     protected function tearDown(): void
@@ -48,7 +58,7 @@ final class WordPressBootstrapperTest extends TestCase
 
     public function testItThrowsExceptionForEmptyPath(): void
     {
-        $bootstrapper = new WordPressBootstrapper('');
+        $bootstrapper = new WordPressBootstrapper('', $this->config);
         $tenant = $this->createTenant();
 
         $this->expectException(TenantProvisioningException::class);
@@ -59,7 +69,7 @@ final class WordPressBootstrapperTest extends TestCase
 
     public function testItThrowsExceptionForNonExistentPath(): void
     {
-        $bootstrapper = new WordPressBootstrapper('/non/existent/path');
+        $bootstrapper = new WordPressBootstrapper('/non/existent/path', $this->config);
         $tenant = $this->createTenant();
 
         $this->expectException(TenantProvisioningException::class);
@@ -70,7 +80,7 @@ final class WordPressBootstrapperTest extends TestCase
 
     public function testItThrowsExceptionForPathWithoutWpLoad(): void
     {
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
+        $bootstrapper = new WordPressBootstrapper($this->tempDir, $this->config);
         $tenant = $this->createTenant();
 
         $this->expectException(TenantProvisioningException::class);
@@ -101,7 +111,7 @@ if (!defined('DB_HOST')) define('DB_HOST', 'test');
 PHP;
         file_put_contents($this->tempDir . '/wp-load.php', $wpLoadContent);
 
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
+        $bootstrapper = new WordPressBootstrapper($this->tempDir, $this->config);
         $tenant = new Tenant(
             id: '1',
             domain: 'shop.example.com',
@@ -110,6 +120,7 @@ PHP;
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'encrypted',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'business',
             metadata: [],
@@ -139,7 +150,7 @@ if (!defined('DB_HOST')) define('DB_HOST', 'test');
 PHP;
         file_put_contents($this->tempDir . '/wp-load.php', $wpLoadContent);
 
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
+        $bootstrapper = new WordPressBootstrapper($this->tempDir, $this->config);
         $tenant = new Tenant(
             id: '1',
             domain: 'shop.example.com',
@@ -148,6 +159,7 @@ PHP;
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'encrypted',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'business',
             metadata: [],
@@ -173,7 +185,7 @@ if (!defined('DB_HOST')) define('DB_HOST', 'test');
 PHP;
         file_put_contents($this->tempDir . '/wp-load.php', $wpLoadContent);
 
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
+        $bootstrapper = new WordPressBootstrapper($this->tempDir, $this->config);
         $tenant = $this->createTenant();
 
         // First bootstrap
@@ -210,7 +222,7 @@ if (!defined('DB_HOST')) define('DB_HOST', 'test');
 PHP;
         file_put_contents($this->tempDir . '/wp-load.php', $wpLoadContent);
 
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
+        $bootstrapper = new WordPressBootstrapper($this->tempDir, $this->config);
         $tenant = $this->createTenant();
 
         // Should not throw about WP_INSTALLING
@@ -232,6 +244,7 @@ PHP;
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'encrypted',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'business',
             metadata: [],

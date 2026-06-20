@@ -31,6 +31,7 @@ final class PdoTenantRepositoryTest extends TestCase
                 database_name TEXT NOT NULL,
                 database_user TEXT NOT NULL,
                 encrypted_database_password TEXT NOT NULL,
+                storage_folder TEXT NOT NULL UNIQUE,
                 status TEXT NOT NULL,
                 plan TEXT NOT NULL,
                 metadata TEXT NULL,
@@ -67,6 +68,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_created',
             databaseUser: 'tenant_created_user',
             encryptedDatabasePassword: 'TENANT_CREATED_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'ACTIVE',
             plan: 'enterprise',
             metadata: ['uploads_path' => '/srv/uploads/created'],
@@ -94,6 +96,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_empty_metadata',
             databaseUser: 'tenant_empty_metadata_user',
             encryptedDatabasePassword: 'TENANT_EMPTY_METADATA_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
         ));
 
         $statement = $this->pdo->query(
@@ -120,6 +123,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_list_metadata',
             databaseUser: 'tenant_list_metadata_user',
             encryptedDatabasePassword: 'TENANT_LIST_METADATA_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             metadata: $metadata,
         ));
     }
@@ -136,6 +140,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_bad_port',
             databaseUser: 'tenant_bad_port_user',
             encryptedDatabasePassword: 'TENANT_BAD_PORT_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
         ));
     }
 
@@ -151,6 +156,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_updated',
             databaseUser: 'tenant_updated_user',
             encryptedDatabasePassword: 'TENANT_UPDATED_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'SUSPENDED',
             plan: 'enterprise',
             metadata: ['region' => 'us-east-1'],
@@ -181,6 +187,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_missing',
             databaseUser: 'tenant_missing_user',
             encryptedDatabasePassword: 'TENANT_MISSING_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -205,6 +212,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'TENANT_1_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'business',
             metadata: $metadata,
@@ -224,6 +232,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'TENANT_1_DATABASE_PASSWORD',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'business',
         ));
@@ -355,10 +364,10 @@ final class PdoTenantRepositoryTest extends TestCase
             <<<'SQL'
             INSERT INTO tenants (
                 id, domain, database_host, database_port, database_name,
-                database_user, encrypted_database_password, status, plan, metadata
+                database_user, encrypted_database_password, storage_folder, status, plan, metadata
             ) VALUES (
                 2, 'test.example.com', 'db', 3306, 'tenant_2',
-                'user', 'pass', 'active', 'basic', 12345
+                'user', 'pass', 'tenant_2_a7x9k2m8pQ3LwRtZvBnJy', 'active', 'basic', 12345
             )
             SQL,
         );
@@ -508,6 +517,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_default',
             databaseUser: 'tenant_default_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'pending',
             plan: 'basic',
         ));
@@ -528,6 +538,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'pending',
             plan: 'basic',
         ));
@@ -549,6 +560,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -566,6 +578,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -583,6 +596,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: '',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -600,6 +614,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: '',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -617,6 +632,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: '',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -634,6 +650,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: '',
             plan: 'basic',
         ));
@@ -651,6 +668,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: '',
         ));
@@ -668,6 +686,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -688,6 +707,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -705,6 +725,7 @@ final class PdoTenantRepositoryTest extends TestCase
             databaseName: 'tenant_test',
             databaseUser: 'tenant_test_user',
             encryptedDatabasePassword: 'password',
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'active',
             plan: 'basic',
         ));
@@ -722,6 +743,7 @@ final class PdoTenantRepositoryTest extends TestCase
                 database_name,
                 database_user,
                 encrypted_database_password,
+                storage_folder,
                 status,
                 plan,
                 metadata
@@ -733,6 +755,7 @@ final class PdoTenantRepositoryTest extends TestCase
                 'tenant_1',
                 'tenant_1_user',
                 'TENANT_1_DATABASE_PASSWORD',
+                'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
                 'active',
                 'business',
                 :metadata

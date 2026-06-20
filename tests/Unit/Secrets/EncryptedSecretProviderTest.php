@@ -87,6 +87,7 @@ final class EncryptedSecretProviderTest extends TestCase
             databaseName: 'tenant_1',
             databaseUser: 'tenant_1_user',
             encryptedDatabasePassword: $encryptedPassword,
+            storageFolder: 'tenant_1_a7x9k2m8pQ3LwRtZvBnJy',
             status: 'pending',
             plan: 'business',
             metadata: [],
