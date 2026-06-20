@@ -7,7 +7,7 @@
          failOnDeprecation="true"
          failOnNotice="true"
          failOnRisky="true"
-         failOnWarning="false">
+         failOnWarning="true">
     <testsuites>
         <testsuite name="MultiTenantWordPress">
             <directory>tests</directory>

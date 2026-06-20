@@ -210,7 +210,7 @@ final class ConfigTest extends TestCase
         self::assertSame('wordpress_control', $config->controlDatabaseName);
         self::assertSame('reader', $config->controlDatabaseUser);
         self::assertSame('secret', $config->controlDatabasePassword);
-        self::assertSame('env', $config->secretProvider);
+        self::assertSame('encrypted', $config->secretProvider);
         self::assertSame('array', $config->cacheProvider);
         self::assertSame([], $config->trustedDomainSuffixes);
         self::assertFalse($config->allowLocalhost);
