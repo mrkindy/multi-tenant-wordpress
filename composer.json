@@ -16,6 +16,7 @@
         "ext-pdo": "*",
         "ext-sodium": "*",
         "aws/aws-sdk-php": "^3.300",
+        "filp/whoops": "^2.18",
         "psr/log": "^3.0"
     },
     "require-dev": {

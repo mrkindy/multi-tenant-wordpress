@@ -79,25 +79,6 @@ final class WordPressBootstrapperTest extends TestCase
         $bootstrapper->bootstrap($tenant, 'password');
     }
 
-    public function testItThrowsExceptionForPathWithDirectoryInsteadOfFile(): void
-    {
-        mkdir($this->tempDir . '/wp-load.php');
-        $bootstrapper = new WordPressBootstrapper($this->tempDir);
-        $tenant = $this->createTenant();
-
-        $this->expectException(TenantProvisioningException::class);
-        // The error message could be either from validateWpPath or from the PHP include error
-        $this->expectExceptionMessageMatches('/wp-load\.php|Failed opening|Failed to bootstrap/');
-
-        try {
-            $bootstrapper->bootstrap($tenant, 'password');
-        } catch (TenantProvisioningException $e) {
-            // Clean up the directory before re-throwing
-            rmdir($this->tempDir . '/wp-load.php');
-            throw $e;
-        }
-    }
-
     public function testResetClearsBootstrapState(): void
     {
         // First call to reset

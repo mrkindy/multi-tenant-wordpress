@@ -10,15 +10,16 @@ use MrKindy\MultiTenantWordPress\Config\Config;
  * autoloading and environment loading, but before Roots\Config::apply().
  */
 Bootstrap::boot(new Config(
-    controlDatabaseHost: env('CONTROL_DB_HOST'),
-    controlDatabasePort: (int) env('CONTROL_DB_PORT', 3306),
-    controlDatabaseName: env('CONTROL_DB_NAME'),
-    controlDatabaseUser: env('CONTROL_DB_USER'),
-    controlDatabasePassword: env('CONTROL_DB_PASSWORD'),
-    encryptionKey: env('TENANT_ENCRYPTION_KEY'),
-    secretProvider: env('TENANT_SECRET_PROVIDER', Config::SECRET_PROVIDER_ENV),
+    controlDatabaseHost: getenv('DB_HOST') ?: 'localhost',
+    controlDatabasePort: (int) (getenv('DB_PORT') ?: 3306),
+    controlDatabaseName: getenv('DB_NAME'),
+    controlDatabaseUser: getenv('DB_USER'),
+    controlDatabasePassword: getenv('DB_PASSWORD') ?: '',
+    encryptionKey: getenv('TENANT_ENCRYPTION_KEY') ?: '',
+    enableDebugging: true,
+    cacheProvider: Config::CACHE_PROVIDER_ARRAY,
     trustedDomainSuffixes: ['*.example.com'],
-    awsRegion: env('AWS_REGION', 'us-east-1'),
+    allowLocalhost: false,
+    cacheTtlSeconds: 60,
 ));
-
 // Do not define DB_NAME, DB_USER, DB_PASSWORD, or DB_HOST elsewhere in Bedrock.

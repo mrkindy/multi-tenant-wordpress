@@ -17,6 +17,7 @@ final readonly class Config
 {
     public const SECRET_PROVIDER_ENV = 'env';
     public const SECRET_PROVIDER_AWS = 'aws';
+    public const SECRET_PROVIDER_ENCRYPTED = 'encrypted';
     public const CACHE_PROVIDER_ARRAY = 'array';
 
     /**
@@ -28,7 +29,7 @@ final readonly class Config
         public string $controlDatabaseName,
         public string $controlDatabaseUser,
         public string $controlDatabasePassword,
-        public string $secretProvider = self::SECRET_PROVIDER_ENV,
+        public string $secretProvider = self::SECRET_PROVIDER_ENCRYPTED,
         public string $encryptionKey = '',
         public string $cacheProvider = self::CACHE_PROVIDER_ARRAY,
         public array $trustedDomainSuffixes = [],
@@ -37,6 +38,7 @@ final readonly class Config
         public string $awsRegion = 'us-east-1',
         public string $awsSecretPasswordKey = 'password',
         public ?LoggerInterface $logger = null,
+        public bool $enableDebugging = false,
         public ?TenantRepositoryInterface $tenantRepository = null,
         public ?SecretProviderInterface $customSecretProvider = null,
         public ?CacheInterface $customCache = null,
@@ -81,7 +83,7 @@ final readonly class Config
             $this->customSecretProvider === null
             && !in_array(
                 $this->secretProvider,
-                [self::SECRET_PROVIDER_ENV, self::SECRET_PROVIDER_AWS],
+                [self::SECRET_PROVIDER_ENV, self::SECRET_PROVIDER_AWS, self::SECRET_PROVIDER_ENCRYPTED],
                 true,
             )
         ) {
@@ -99,7 +101,6 @@ final readonly class Config
     private function validateEncryptionKey(string $base64Key): void
     {
         $key = base64_decode($base64Key, true);
-
         if ($key === false || strlen($key) !== SODIUM_CRYPTO_SECRETBOX_KEYBYTES) {
             throw new ConfigurationException('Encryption key is invalid.');
         }

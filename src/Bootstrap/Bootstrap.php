@@ -21,6 +21,7 @@ use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 use MrKindy\MultiTenantWordPress\Resolver\TenantResolver;
 use MrKindy\MultiTenantWordPress\Secrets\AwsSecretsManagerClient;
 use MrKindy\MultiTenantWordPress\Secrets\AwsSecretsProvider;
+use MrKindy\MultiTenantWordPress\Secrets\EncryptedSecretProvider;
 use MrKindy\MultiTenantWordPress\Secrets\EnvSecretsProvider;
 use MrKindy\MultiTenantWordPress\Security\RequestValidator;
 use MrKindy\MultiTenantWordPress\WordPress\DatabaseConfigurator;
@@ -28,6 +29,8 @@ use PDO;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use Throwable;
+use Whoops\Run;
+use Whoops\Handler\PrettyPageHandler;
 
 final class Bootstrap
 {
@@ -36,6 +39,12 @@ final class Bootstrap
         $logger = $config->logger ?? new NullLogger();
 
         try {
+            if ($config->enableDebugging) {
+                $whoops = new Run();
+                $whoops->pushHandler(new PrettyPageHandler());
+                $whoops->register();
+            }
+
             $requestValidator = new RequestValidator(
                 new DomainValidator($config->allowLocalhost),
                 $config->trustedDomainSuffixes,
@@ -120,7 +129,12 @@ final class Bootstrap
             );
         }
 
-        return new EnvSecretsProvider();
+        if ($config->secretProvider === Config::SECRET_PROVIDER_ENV) {
+            return  new EnvSecretsProvider();
+        }
+
+        $encryption = new EncryptionService($config->encryptionKey);
+        return new EncryptedSecretProvider($encryption);
     }
 
     private static function logExpectedFailure(
