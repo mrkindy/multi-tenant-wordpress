@@ -5,6 +5,7 @@ declare(strict_types=1);
 use MrKindy\MultiTenantWordPress\DTO\CreateTenant;
 use MrKindy\MultiTenantWordPress\Encryption\EncryptionService;
 use MrKindy\MultiTenantWordPress\Provisioning\DatabaseNameGenerator;
+use MrKindy\MultiTenantWordPress\Provisioning\StorageFolderGenerator;
 use MrKindy\MultiTenantWordPress\Repository\PdoTenantRepository;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -32,6 +33,7 @@ $pdo = new PDO(
 $repository = new PdoTenantRepository($pdo);
 $encryption = new EncryptionService($encryptionKey);
 $nameGenerator = new DatabaseNameGenerator();
+$storageFolderGenerator = new StorageFolderGenerator();
 
 // Tenant details
 $domain = 'shop.example.com';
@@ -45,6 +47,9 @@ $databasePassword = bin2hex(random_bytes(32));
 // Encrypt the password for storage
 $encryptedPassword = $encryption->encrypt($databasePassword);
 
+// Generate storage folder (will be updated with actual tenant ID after creation)
+$storageFolder = $storageFolderGenerator->generate('temp');
+
 // Create tenant with 'pending' status - provisioning will happen separately
 $tenant = $repository->create(new CreateTenant(
     domain: $domain,
@@ -53,6 +58,7 @@ $tenant = $repository->create(new CreateTenant(
     databaseName: $databaseName,
     databaseUser: $databaseUser,
     encryptedDatabasePassword: $encryptedPassword,
+    storageFolder: $storageFolder,
     status: 'pending',
     plan: 'business',
     metadata: [],
@@ -61,5 +67,6 @@ $tenant = $repository->create(new CreateTenant(
 echo "Created tenant {$tenant->id} for {$tenant->domain}\n";
 echo "Database: {$tenant->databaseName}\n";
 echo "Database User: {$tenant->databaseUser}\n";
+echo "Storage Folder: {$tenant->storageFolder}\n";
 echo "Status: {$tenant->status}\n";
 echo "\nNext step: Run provision-tenant.php to install WordPress.\n";

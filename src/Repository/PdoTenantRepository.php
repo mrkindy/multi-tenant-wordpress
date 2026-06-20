@@ -32,6 +32,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
                 database_name,
                 database_user,
                 encrypted_database_password,
+                storage_folder,
                 status,
                 plan,
                 metadata
@@ -77,6 +78,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
                 database_name,
                 database_user,
                 encrypted_database_password,
+                storage_folder,
                 status,
                 plan,
                 metadata
@@ -87,6 +89,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
                 :database_name,
                 :database_user,
                 :encrypted_database_password,
+                :storage_folder,
                 :status,
                 :plan,
                 :metadata
@@ -105,6 +108,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             'database_name' => $tenant->databaseName,
             'database_user' => $tenant->databaseUser,
             'encrypted_database_password' => $tenant->encryptedDatabasePassword,
+            'storage_folder' => $tenant->storageFolder,
             'status' => strtolower($tenant->status),
             'plan' => $tenant->plan,
             'metadata' => $encodedMetadata,
@@ -124,6 +128,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             databaseName: $tenant->databaseName,
             databaseUser: $tenant->databaseUser,
             encryptedDatabasePassword: $tenant->encryptedDatabasePassword,
+            storageFolder: $tenant->storageFolder,
             status: strtolower($tenant->status),
             plan: $tenant->plan,
             metadata: $metadata,
@@ -155,6 +160,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
                 database_name = :database_name,
                 database_user = :database_user,
                 encrypted_database_password = :encrypted_database_password,
+                storage_folder = :storage_folder,
                 status = :status,
                 plan = :plan,
                 metadata = :metadata
@@ -174,6 +180,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             'database_name' => $tenant->databaseName,
             'database_user' => $tenant->databaseUser,
             'encrypted_database_password' => $tenant->encryptedDatabasePassword,
+            'storage_folder' => $tenant->storageFolder,
             'status' => strtolower($tenant->status),
             'plan' => $tenant->plan,
             'metadata' => $encodedMetadata,
@@ -219,6 +226,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
                 database_name,
                 database_user,
                 encrypted_database_password,
+                storage_folder,
                 status,
                 plan,
                 metadata
@@ -355,6 +363,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             'database_name',
             'database_user',
             'encrypted_database_password',
+            'storage_folder',
             'status',
             'plan',
         ];
@@ -393,6 +402,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             databaseName: (string) $row['database_name'],
             databaseUser: (string) $row['database_user'],
             encryptedDatabasePassword: (string) $row['encrypted_database_password'],
+            storageFolder: (string) $row['storage_folder'],
             status: strtolower((string) $row['status']),
             plan: (string) $row['plan'],
             metadata: $metadata,
@@ -407,6 +417,7 @@ readonly class PdoTenantRepository implements TenantRepositoryInterface, TenantP
             $tenant->databaseName,
             $tenant->databaseUser,
             $tenant->encryptedDatabasePassword,
+            $tenant->storageFolder,
             $tenant->status,
             $tenant->plan,
         ];
