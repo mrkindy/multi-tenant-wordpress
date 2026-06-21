@@ -51,13 +51,13 @@ final readonly class DatabaseConfigurator
     {
         if ($this->config->storageProvider === Config::STORAGE_PROVIDER_DISK) {
             // Local disk storage - define UPLOADS constant like WordPress
-            $uploadsPath = $this->config->storageBasePath . $tenant->storageFolder . '/uploads/';
+            $uploadsPath = $this->config->storageBasePath . $tenant->storageFolder . '/uploads';
             $this->defineIfMissing('UPLOADS', $uploadsPath);
         } elseif ($this->config->storageProvider === Config::STORAGE_PROVIDER_S3) {
             // S3 storage - define constants for S3 plugins
             $this->defineIfMissing('S3_UPLOADS_BUCKET', $this->config->s3Bucket);
             $this->defineIfMissing('S3_UPLOADS_REGION', $this->config->s3Region);
-            $this->defineIfMissing('S3_UPLOADS_KEY_PREFIX', $tenant->storageFolder . '/uploads/');
+            $this->defineIfMissing('S3_UPLOADS_KEY_PREFIX', $tenant->storageFolder . '/uploads');
 
             // Optional S3 configuration
             if ($this->config->s3Endpoint !== '') {

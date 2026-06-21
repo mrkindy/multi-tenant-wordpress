@@ -55,7 +55,7 @@ final readonly class Config
         public ?DatabaseNameGeneratorInterface $databaseNameGenerator = null,
         // Storage configuration
         public string $storageProvider = self::STORAGE_PROVIDER_DISK,
-        public string $storageBasePath = 'wp-content/storage/',
+        public string $storageBasePath = 'wp-content/uploads/',
         public string $s3Bucket = '',
         public string $s3Region = 'us-east-1',
         public string $s3AccessKey = '',
